@@ -1,0 +1,1464 @@
+<title>Battle Of Joy</title>
+<link rel="preload" as="image" href="assets/arena-bg.jpg">
+<link rel="preload" as="image" href="assets/coin.jpg">
+<link rel="preload" as="image" href="assets/frame-sr.webp">
+<link rel="preload" as="image" href="assets/frame-ur.webp">
+<link rel="preload" as="image" href="assets/coin-heads.webp">
+<link rel="preload" as="image" href="assets/coin-tails.webp">
+<link rel="preload" as="image" href="assets/icon-btn-coin.webp">
+<link rel="preload" as="image" href="assets/icon-btn-dice.webp">
+<link rel="preload" as="image" href="assets/icon-timer.webp">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@600;700&family=Chakra+Petch:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
+
+  :root{
+    --bg:#0a0b13;
+    --bg-glow: radial-gradient(120% 100% at 50% -10%, #1c1140 0%, #0a0b13 55%);
+    --surface:#161829;
+    --surface-2:#1f2236;
+    --surface-3:#272b45;
+    --border:#33395a;
+    --text:#f2f2fb;
+    --text-muted:#9296b8;
+    --accent:#8b6bff;
+    --accent-soft:#8b6bff33;
+    --p1:#2fd9e8;
+    --p1-soft:#2fd9e830;
+    --p2:#ff8a5c;
+    --p2-soft:#ff8a5c30;
+    --danger:#ff4d6d;
+    --heal:#3fe0a5;
+    --gold:#e5b95c;
+    --gold-bright:#ffdea1;
+    background:var(--bg);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg-glow);
+    color:var(--text);
+    font-family:"Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    margin:0;
+    display:flex;
+    justify-content:center;
+  }
+  .disp{font-family:"Chakra Petch","Zen Kaku Gothic New",sans-serif; font-variant-numeric:tabular-nums;}
+  h1,h2,h3,p{margin:0;}
+  button{font-family:inherit;}
+
+  .phone{
+    width:100%;
+    max-width:430px;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* generic centered-menu screens */
+  .menu-screen{
+    flex:1; display:flex; flex-direction:column; gap:18px;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));
+    padding-top:calc(18px + env(safe-area-inset-top,0px));
+    animation:fadein .35s ease both; overflow-y:auto;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .menu-screen::-webkit-scrollbar{display:none; width:0; height:0;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+  #screen-title{
+    align-items:center; justify-content:center; text-align:center; gap:26px; position:relative; overflow:hidden;
+  }
+  #screen-title::before{
+    content:''; position:absolute; inset:0;
+    background:url('assets/arena-bg.jpg') center 20%/cover no-repeat;
+    z-index:0;
+  }
+  #screen-title::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg, #0a0b13cc 0%, #0a0b13aa 35%, #0a0b13 92%);
+    z-index:0;
+  }
+  #screen-title > *{position:relative; z-index:1;}
+  .eyebrow-chip{
+    font-family:"Chakra Petch",sans-serif; font-size:11px; font-weight:700; letter-spacing:2px;
+    color:var(--gold-bright); border:1px solid var(--gold); border-radius:20px; padding:5px 14px;
+    background:#0a0b1399;
+  }
+  .logo-mark{
+    font-family:"Cinzel Decorative","Chakra Petch",sans-serif; font-weight:700; font-size:34px; letter-spacing:1px; line-height:1.25;
+    background:linear-gradient(135deg,var(--gold-bright),var(--gold) 55%, #b8860b);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 24px #e5b95c55);
+  }
+  .logo-sub{color:var(--text-muted); font-size:13px; letter-spacing:.5px;}
+  .coin-hero{
+    width:112px; height:112px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffe9ac, var(--gold) 55%, #b8860b 100%);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:0 0 0 4px #ffffff22, 0 12px 34px -8px #000000a0, 0 0 40px -6px #ffd68288;
+    animation:float 3.2s ease-in-out infinite;
+  }
+  .coin-hero img{width:100%; height:100%; object-fit:cover;}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-4deg);} 50%{transform:translateY(-10px) rotate(4deg);}}
+
+  .btn{
+    appearance:none; border:none; cursor:pointer; font-weight:700; font-size:16px; color:var(--text);
+    background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:14px 20px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:transform .12s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{
+    background:linear-gradient(180deg, #fff1b0 0%, var(--gold) 45%, #9e7422 100%);
+    border:1px solid #ffe9ad; color:#3a2900; text-shadow:0 1px 0 #ffe9ad88;
+    box-shadow:0 10px 24px -8px #00000090, inset 0 1px 0 #ffffffaa;
+  }
+  .btn-primary:active{box-shadow:inset 0 3px 8px #00000055;}
+  .btn-secondary{
+    background:linear-gradient(180deg, #d8ccff 0%, var(--accent) 45%, #4a3399 100%);
+    border:1px solid #d8ccff; color:#fff; text-shadow:0 1px 2px #00000066;
+    box-shadow:0 10px 24px -8px #00000090, inset 0 1px 0 #ffffff55;
+  }
+  .btn-secondary:active{box-shadow:inset 0 3px 8px #00000055;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .btn-block{width:100%;}
+  .btn-ghost{background:transparent;}
+
+  .card-surface{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px;}
+  .rules-h{font-size:13.5px; font-weight:900; color:var(--gold-bright); letter-spacing:.4px;}
+  .rules-p{font-size:12.5px; color:var(--text-muted); line-height:1.7;}
+  .rules-p b{color:var(--text);}
+  .arche-icon{width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; flex:none;}
+  .arche-name{font-size:12.5px; font-weight:800;}
+  .arche-detail{border-top:1px solid var(--border); padding-top:10px;}
+  .arche-detail:first-child{border-top:none; padding-top:0;}
+  .arche-summary{display:flex; gap:10px; align-items:center; cursor:pointer; list-style:none;}
+  .arche-summary::-webkit-details-marker{display:none;}
+  .arche-summary::after{content:'▾'; margin-left:auto; color:var(--text-muted); font-size:11px; transition:transform .2s ease;}
+  .arche-detail[open] .arche-summary::after{transform:rotate(180deg);}
+  .arche-body{display:flex; flex-direction:column; gap:10px; padding-top:12px;}
+  .cd-card{background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;}
+  .cd-head{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:800;}
+  .cd-head .hp{margin-left:auto; font-size:11px; font-weight:700; color:var(--text-muted); font-family:"Chakra Petch",sans-serif;}
+
+  #screen-rules{position:relative;}
+  #screen-rules::before{content:''; position:absolute; inset:0; background:url('assets/arena-bg.jpg') center 15%/cover no-repeat; z-index:0;}
+  #screen-rules::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, #0a0b13e0 0%, #0a0b13f5 22%, #0a0b13 60%); z-index:0;}
+  #screen-rules > *{position:relative; z-index:1;}
+  #screen-room{justify-content:center; gap:16px; position:relative;}
+  #screen-room::before{content:''; position:absolute; inset:0; background:url('assets/arena-bg.jpg') center 15%/cover no-repeat; z-index:0;}
+  #screen-room::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, #0a0b13d8 0%, #0a0b13f0 30%, #0a0b13 85%); z-index:0;}
+  #screen-room > *{position:relative; z-index:1;}
+  .room-tabs{display:flex; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:4px;}
+  .room-tab{flex:1; text-align:center; padding:10px; border-radius:10px; font-weight:700; font-size:14px; color:var(--text-muted); cursor:pointer;}
+  .room-tab.active{background:var(--surface-3); color:var(--text);}
+  .room-code{font-family:"Chakra Petch",sans-serif; font-size:40px; font-weight:700; letter-spacing:10px; text-align:center; color:var(--gold); padding:18px 0;}
+  .room-input{width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:"Chakra Petch",sans-serif; font-size:26px; letter-spacing:8px; text-align:center; padding:14px; font-weight:700;}
+  .room-input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .dots::after{content:'…'; animation:dots 1.2s steps(4) infinite;}
+  @keyframes dots{0%{content:'';} 25%{content:'.';} 50%{content:'..';} 75%{content:'...';} 100%{content:'';}}
+  .muted{color:var(--text-muted); font-size:13px; text-align:center;}
+  .joined-banner{text-align:center; color:var(--heal); font-weight:700; font-size:14px; animation:fadein .3s ease both;}
+
+  #screen-cointoss{align-items:center; justify-content:center; text-align:center; gap:24px; position:relative;}
+  #screen-cointoss::before{content:''; position:absolute; inset:0; background:url('assets/arena-bg.jpg') center 22%/cover no-repeat; z-index:0;}
+  #screen-cointoss::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, #0a0b13d8 0%, #0a0b13f0 30%, #0a0b13 85%); z-index:0;}
+  #screen-cointoss > *{position:relative; z-index:1;}
+  .coin3d{width:120px; height:120px; perspective:600px;}
+  .coin3d-inner{width:100%; height:100%; position:relative; transform-style:preserve-3d; border-radius:50%;}
+  .coin3d-inner.spinning{animation:coinspin 1.5s cubic-bezier(.2,.6,.3,1) forwards;}
+  @keyframes coinspin{0%{transform:rotateY(0);} 100%{transform:rotateY(1800deg);}}
+  .coin3d-inner.spin-heads{animation:coinspinH 1.3s cubic-bezier(.2,.6,.3,1) forwards;}
+  .coin3d-inner.spin-tails{animation:coinspinT 1.3s cubic-bezier(.2,.6,.3,1) forwards;}
+  @keyframes coinspinH{0%{transform:rotateY(0);} 100%{transform:rotateY(1800deg);}}
+  @keyframes coinspinT{0%{transform:rotateY(0);} 100%{transform:rotateY(1980deg);}}
+  .coin-face{position:absolute; inset:0; border-radius:50%; backface-visibility:hidden; overflow:hidden; box-shadow:0 0 0 4px #ffffff22, 0 14px 34px -10px #00000090;}
+  .coin-face img{width:100%; height:100%; object-fit:cover;}
+  .coin-face.back{transform:rotateY(180deg);}
+  .toss-result{font-size:18px; font-weight:700;}
+  .toss-result .name{color:var(--gold);}
+
+  /* ---------- shared VS card (used in prep + arena) ---------- */
+  .vs-stage{
+    flex:1; position:relative; display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:14px 14px 6px;
+  }
+  .vfx-sway{flex:1; max-width:150px; aspect-ratio:896/1200; position:relative;}
+  .vfx-card{
+    width:100%; height:100%; position:relative;
+    container-type:inline-size;
+    cursor:pointer; user-select:none; -webkit-touch-callout:none;
+    transition:filter .25s ease;
+  }
+  .vfx-card.my-turn{filter:drop-shadow(0 0 3px var(--gold)) drop-shadow(0 0 10px var(--gold)); animation:cardpulse 1.6s ease-in-out infinite;}
+  @keyframes cardpulse{0%,100%{filter:brightness(1) drop-shadow(0 0 3px var(--gold)) drop-shadow(0 0 10px var(--gold));} 50%{filter:brightness(1.15) drop-shadow(0 0 4px var(--gold)) drop-shadow(0 0 16px var(--gold));}}
+  .vfx-card.ko{filter:grayscale(.85) brightness(.55);}
+
+  /* idle standby sway (battle only) + attack lunge, kept on separate elements so the transforms compose without fighting */
+  #battle-stage .vfx-sway{animation:idle-sway 3.4s ease-in-out infinite;}
+  #battle-stage .vfx-sway.p2{animation-delay:-1.7s;}
+  @keyframes idle-sway{0%,100%{transform:translateY(0) rotate(-1deg);} 50%{transform:translateY(-5px) rotate(1deg);}}
+  .vfx-card.pressed{transform:scale(.97);}
+  .vfx-card.lunge-right{animation:lunge-right .5s cubic-bezier(.3,.6,.3,1) both;}
+  .vfx-card.lunge-left{animation:lunge-left .5s cubic-bezier(.3,.6,.3,1) both;}
+  @keyframes lunge-right{0%{transform:translateX(0) scale(1);} 30%{transform:translateX(22%) scale(1.06) rotate(2deg);} 100%{transform:translateX(0) scale(1);}}
+  @keyframes lunge-left{0%{transform:translateX(0) scale(1);} 30%{transform:translateX(-22%) scale(1.06) rotate(-2deg);} 100%{transform:translateX(0) scale(1);}}
+
+  .vfx-window{position:absolute; overflow:hidden; background:#11131f; z-index:1;}
+  .vfx-window img{width:100%; height:100%; object-fit:cover; object-position:top center; display:block;}
+  .vfx-icon-fallback{width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:16cqw;}
+  .vfx-frame-img{position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; z-index:2;}
+  .vfx-ultbadge{position:absolute; top:3%; right:4%; font-size:6cqw; z-index:4; filter:drop-shadow(0 0 3px #000);}
+  .vfx-rarity{font-size:8.5px; font-weight:900; padding:1px 5px; border-radius:8px; letter-spacing:.3px; vertical-align:middle;}
+  .vfx-rarity.sr{background:#c9a84c33; color:#e5c877;}
+  .vfx-rarity.ur{background:#ff5a7a33; color:#ff9db0;}
+  .vfx-rarity.lr{background:linear-gradient(90deg,#ffb3ec33,#b3e0ff33); color:#f0d9ff;}
+
+  .vfx-arche{position:absolute; z-index:3; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:800; color:#4a3208; text-shadow:0 1px 0 #ffffffaa; letter-spacing:.2px; line-height:1.05; overflow:hidden;}
+  .vfx-cname{position:absolute; z-index:3; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:900; color:#2c1c00; line-height:1.1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+  .vfx-hpzone{position:absolute; z-index:3; display:flex; flex-direction:column; justify-content:center; gap:3%;}
+  .vfx-hpnum{font-family:"Chakra Petch",sans-serif; font-weight:700; text-align:right; color:#fff; text-shadow:0 1px 2px #000a; font-size:5.5cqw; line-height:1;}
+  .vfx-hptrack{height:26%; border-radius:20px; background:#00000066; overflow:hidden;}
+  .vfx-hpfill{height:100%; border-radius:20px; transition:width .5s cubic-bezier(.3,.7,.3,1);}
+  .vfx-card.p1 .vfx-hpfill{background:linear-gradient(90deg,var(--p1),#7be8f0);}
+  .vfx-card.p2 .vfx-hpfill{background:linear-gradient(90deg,var(--p2),#ffbf9c);}
+
+  .rar-sr .vfx-window, .rar-ur .vfx-window{ left:14.5%; top:22.2%; right:14.5%; bottom:24.2%; }
+  .rar-sr .vfx-arche, .rar-ur .vfx-arche{ left:26%; top:11%; right:26%; height:8%; font-size:4.6cqw; }
+  .rar-sr .vfx-cname, .rar-ur .vfx-cname{ left:15%; top:76.5%; right:15%; height:7%; font-size:6cqw; }
+  .rar-sr .vfx-hpzone, .rar-ur .vfx-hpzone{ left:16%; top:84%; right:16%; height:6.5%; }
+
+  .rar-lr .vfx-window{ left:22.9%; top:22.1%; right:22.9%; bottom:30.8%; }
+  .rar-lr .vfx-arche{ left:20%; top:1%; right:20%; height:11%; font-size:4.2cqw; }
+  .rar-lr .vfx-cname{ left:18%; top:74.5%; right:18%; height:6.5%; font-size:5.6cqw; }
+  .rar-lr .vfx-hpzone{ left:19%; top:82%; right:19%; height:6%; }
+
+  .vs-mark{
+    font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:16px; color:var(--text-muted);
+    width:30px; text-align:center; flex:none; z-index:1;
+  }
+  .vs-stage.vertical{flex-direction:column; gap:10px; padding:10px 24px;}
+  .vs-stage.vertical .vfx-sway{width:58%; max-width:230px; flex:none;}
+  .vs-stage.vertical .vs-mark{width:auto; padding:2px 0;}
+
+  /* ---------- Prep screen ---------- */
+  #screen-prep{padding:0; gap:0; position:relative;}
+  #screen-prep::before{content:''; position:absolute; inset:0; background:url('assets/arena-bg.jpg') center 30%/cover no-repeat; z-index:0;}
+  #screen-prep::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, #0a0b13ee 0%, #0a0b13f2 30%, #0a0b13 90%); z-index:0;}
+  #screen-prep > *{position:relative; z-index:1;}
+  .prep-head{padding:12px 16px 4px; padding-top:calc(12px + env(safe-area-inset-top,0px)); text-align:center;}
+  .prep-timer{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px;}
+  .prep-ready-row{display:flex; gap:10px; padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));}
+  .prep-ready-row .btn{flex:1; flex-direction:column; gap:2px;}
+  .prep-ready-row .btn small{font-weight:500; font-size:10px; color:inherit; opacity:.75;}
+  .prep-ready-row .btn.ready{background:linear-gradient(135deg,var(--heal),#1fae7c); border-color:transparent; color:#04231a;}
+
+  /* ---------- Battle screen: 60/20/20 shell ---------- */
+  #screen-battle{flex-direction:column; height:100%;}
+  .arena{
+    flex:6 1 0; min-height:0; position:relative; display:flex; flex-direction:column; isolation:isolate;
+    background:
+      linear-gradient(180deg, #0a0b1300 0%, #0a0b13cc 55%, #0a0b13 96%),
+      url('assets/arena-bg.jpg') center 25%/cover no-repeat,
+      linear-gradient(180deg, #14152a, #0c0d1a 70%);
+    padding-top:calc(6px + env(safe-area-inset-top,0px));
+  }
+  .arena-topbar{display:flex; align-items:center; justify-content:center; gap:10px; padding:2px 12px 4px; position:relative; z-index:2;}
+  .turn-chip{font-size:11px; font-weight:900; padding:4px 12px; border-radius:20px; background:var(--surface-2); border:1px solid var(--border); letter-spacing:.3px;}
+  .turn-chip.p1{color:var(--p1);}
+  .turn-chip.p2{color:var(--p2);}
+  .arena-timer{display:flex; align-items:center; gap:6px;}
+  .timer-icon{width:20px; height:20px; object-fit:cover; border-radius:5px; flex:none;}
+  .timer-track{width:56px; height:5px; border-radius:4px; background:var(--surface-3); overflow:hidden;}
+  .timer-fill{height:100%; background:linear-gradient(90deg,var(--heal),var(--gold),var(--danger)); width:100%; transition:width 1s linear;}
+  .timer-num{font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:12px; width:18px; text-align:right;}
+
+  .resolve-overlay{
+    position:absolute; inset:0; z-index:5; display:none; align-items:center; justify-content:center; flex-direction:column; gap:10px;
+    background:#05060eaa; backdrop-filter:blur(1px);
+  }
+  .resolve-overlay.active{display:flex; animation:fadein .15s ease both;}
+  .die3d{width:76px; height:76px; border-radius:16px; background:linear-gradient(145deg,#fff,#d8d8e6); box-shadow:0 12px 28px -8px #000a, inset 0 0 0 2px #ffffffaa; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:10px; gap:2px;}
+  .die3d.rolling{animation:dieroll .55s ease-in-out infinite;}
+  @keyframes dieroll{0%{transform:rotate(0deg) scale(1);} 50%{transform:rotate(12deg) scale(1.05);} 100%{transform:rotate(-8deg) scale(1);}}
+  .die3d.landed{animation:dieland .35s cubic-bezier(.3,1.6,.4,1) both;}
+  @keyframes dieland{0%{transform:scale(1.35) rotate(0);} 100%{transform:scale(1) rotate(0);}}
+  .pip{width:100%; height:100%; border-radius:50%; background:#1c1d2b; align-self:center; justify-self:center; transform:scale(.62);}
+  .resolve-label{font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:15px; color:var(--gold); text-align:center; min-height:20px;}
+  .ult-flash-icon{width:84px; height:84px; object-fit:contain; filter:drop-shadow(0 0 16px #47f8e4cc); animation:ultflash .7s ease-out both;}
+  @keyframes ultflash{0%{transform:scale(.4) rotate(-25deg); opacity:0;} 55%{transform:scale(1.15) rotate(6deg); opacity:1;} 100%{transform:scale(1) rotate(0); opacity:1;}}
+  .resolve-sub{font-size:12px; color:var(--text-muted); text-align:center; max-width:260px;}
+
+  .float-num{position:absolute; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:20px; left:50%; top:30%; transform:translateX(-50%); z-index:6; animation:floatup 1s ease forwards; pointer-events:none;}
+  @keyframes floatup{0%{opacity:0; transform:translate(-50%,4px);} 15%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-30px);}}
+  .shake{animation:shakecard .35s ease;}
+  @keyframes shakecard{0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);}}
+
+  .logbar{
+    flex:2 1 0; min-height:0; min-width:0;
+    background:var(--surface);
+    border-style:solid; border-width:18px; border-image:url('assets/log-frame.webp') 140 fill / 18px / 0 round;
+    display:flex; flex-direction:column-reverse; overflow:hidden;
+  }
+  .logbar-inner{
+    flex:1; min-height:0; display:flex; flex-direction:column-reverse; gap:5px;
+    overflow-y:auto; padding:6px 10px; font-size:12px; line-height:1.45;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .logbar-inner::-webkit-scrollbar{display:none; width:0; height:0;}
+  .logbar .entry{color:var(--text-muted); animation:fadein .25s ease both;}
+  .logbar .entry b{color:var(--text); font-weight:700;}
+  .logbar .entry.dmg b.num{color:var(--danger);}
+  .logbar .entry.heal b.num{color:var(--heal);}
+
+  .actionbar{
+    flex:2 1 0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:8px;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+  }
+  .action-buttons{display:flex; gap:8px;}
+  .action-buttons .btn{flex:1; flex-direction:column; gap:2px; padding:10px 6px 8px; font-size:13.5px;}
+  .action-buttons .btn small{font-weight:500; font-size:10px; color:var(--text-muted);}
+  .act-icon{width:34px; height:34px; object-fit:contain; filter:drop-shadow(0 2px 6px #00000088);}
+  .ko-note{text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;}
+
+  /* ---------- effect modal ---------- */
+  .modal-scrim{position:fixed; inset:0; background:#000000aa; z-index:40; display:none; align-items:flex-end; justify-content:center;}
+  .modal-scrim.open{display:flex; animation:fadein .2s ease both;}
+  .modal-sheet{
+    width:100%; max-width:430px; max-height:78vh; overflow-y:auto; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px 20px 0 0; padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:12px;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .modal-sheet::-webkit-scrollbar{display:none; width:0; height:0;}
+  .modal-head{display:flex; align-items:center; gap:10px;}
+  .modal-icon{width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; flex:none;}
+  .modal-title{font-weight:900; font-size:16px;}
+  .modal-close{margin-left:auto; background:var(--surface-3); border:none; color:var(--text); width:30px; height:30px; border-radius:50%; font-size:14px; cursor:pointer;}
+  .action-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .action-table caption{text-align:left; font-size:11px; font-weight:700; color:var(--text-muted); padding-bottom:4px; letter-spacing:.4px;}
+  .action-table td{border-top:1px solid var(--border); padding:6px 4px; vertical-align:top;}
+  .action-table td.key{width:26px; font-family:"Chakra Petch",sans-serif; font-weight:700; color:var(--text);}
+  .action-table td.eff{color:var(--text-muted); line-height:1.4;}
+  .ult-box{border:1px dashed var(--gold); border-radius:10px; padding:8px 10px; font-size:12.5px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;}
+  .ult-box .ult-title{font-weight:700; color:var(--gold); font-size:11px; letter-spacing:.4px; display:flex; align-items:center; gap:6px;}
+  .badge{font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; letter-spacing:.3px;}
+  .badge-on{background:var(--gold); color:#3a2900;}
+  .badge-off{background:var(--surface-3); color:var(--text-muted);}
+
+  /* ---------- Result ---------- */
+  #screen-result{align-items:center; justify-content:center; text-align:center; gap:16px; position:relative;}
+  #screen-result::before{content:''; position:absolute; inset:0; background:url('assets/arena-bg.jpg') center 18%/cover no-repeat; z-index:0;}
+  #screen-result::after{content:''; position:absolute; inset:0; background:radial-gradient(80% 55% at 50% 8%, #ffd68233 0%, transparent 60%), linear-gradient(180deg, #0a0b13b0 0%, #0a0b13e8 40%, #0a0b13 88%); z-index:0;}
+  #screen-result > *{position:relative; z-index:1;}
+  .result-eyebrow{font-family:"Chakra Petch",sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; color:var(--gold-bright); display:flex; align-items:center; gap:8px;}
+  .crown{width:118px; filter:drop-shadow(0 0 14px #ffd68299); animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.08);}}
+  .victory-title{font-family:"Cinzel Decorative",sans-serif; font-weight:700; font-size:40px; letter-spacing:2px; background:linear-gradient(135deg,var(--gold-bright),var(--gold) 60%,#b8860b); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 20px #e5b95c55);}
+  .victory-sub{font-size:12px; color:var(--text-muted); letter-spacing:1px;}
+  .medallion{
+    width:130px; height:130px; border-radius:50%; position:relative;
+    background:radial-gradient(circle at 35% 30%, #ffe9ac, var(--gold) 55%, #8a6512 100%);
+    box-shadow:0 0 0 4px #ffffff22, 0 0 50px -4px #ffd682aa, 0 16px 34px -10px #000000a0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    animation:medallionspin 8s linear infinite;
+  }
+  .medallion img{width:88%; height:88%; object-fit:contain; border-radius:50%;}
+  @keyframes medallionspin{0%{filter:brightness(1);} 50%{filter:brightness(1.15);} 100%{filter:brightness(1);}}
+  .winner-name{font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:20px;}
+  .winner-name.p1{color:var(--p1);}
+  .winner-name.p2{color:var(--p2);}
+  .result-stats{display:flex; gap:8px;}
+  .result-stat{background:#0f1120cc; border:1px solid var(--border); border-radius:12px; padding:8px 14px; min-width:78px;}
+  .result-stat .v{font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:16px; color:var(--gold-bright);}
+  .result-stat .k{font-size:9.5px; color:var(--text-muted); letter-spacing:.5px;}
+
+  .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--surface-3); border:1px solid var(--border); color:var(--text); padding:10px 16px; border-radius:12px; font-size:13px; font-weight:700; box-shadow:0 10px 30px -10px #000a; z-index:60; animation:toastin .3s ease both;}
+  @keyframes toastin{from{opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);}}
+
+  [hidden]{display:none!important;}
+</style>
+
+<div class="phone">
+
+  <section id="screen-title" class="menu-screen">
+    <div class="eyebrow-chip">☆ SEASON 1: CELESTIAL CLASH ☆</div>
+    <div><div class="coin-hero"><img src="assets/coin.jpg" alt=""></div></div>
+    <div>
+      <h1 class="logo-mark">BATTLE OF JOY</h1>
+      <p class="logo-sub">コインとダイスで賭ける、二人の運命</p>
+    </div>
+    <button class="btn btn-primary btn-block" id="btn-to-room" style="max-width:260px;">対戦を始める</button>
+    <button class="btn btn-secondary btn-block" id="btn-to-npc" style="max-width:260px;">🤖 NPCと対戦する</button>
+    <button class="btn btn-ghost" id="btn-to-rules" style="max-width:260px; font-size:13px;">📖 ルール・カード図鑑を見る</button>
+    <p class="muted" style="max-width:280px;">スマホ1つで2人プレイできる試作版です。<br>本番ではルーム番号でオンライン対戦します。</p>
+  </section>
+
+  <section id="screen-rules" class="menu-screen" hidden style="gap:22px;">
+    <div style="text-align:center;">
+      <h2 style="font-size:20px; font-weight:900;">ルール ＆ カード図鑑</h2>
+      <p class="muted">Battle Of Joy の遊び方</p>
+    </div>
+
+    <div class="card-surface" style="text-align:left; display:flex; flex-direction:column; gap:10px;">
+      <h3 class="rules-h">🎮 基本ルール</h3>
+      <p class="rules-p">2人対戦。コイントスで先攻を決め、抽選で1人1枚のキャラクターカードを持つ。自分の手番では「コイン」か「ダイス」のどちらかを選んで実行し、出た結果に応じたダメージ・回復などの効果が発動する。先に相手のHPを0にした方の勝ち。</p>
+      <p class="rules-p">効果はすべてカードに公開されているので、結果自体は運でも「いつ・どちらを選ぶか」の読み合いが実力になる。</p>
+      <p class="rules-p">手番の選択には60秒の制限時間があり、時間切れの場合は自動でコインが使用される。対戦開始前には60秒の「カード確認タイム」があり、両者のカード効果をタップで確認できる。</p>
+      <p class="rules-p">奥義には3種類ある。<b>パッシブ型</b>は自分のHPが一定以下になると自動で発動し続ける。<b>アクティブ型</b>はアクションの代わりに使用でき、ゲーム中1回だけ使える。<b>トリガー型</b>はHPが0になる瞬間に自動で1度だけ発動する（生存判定など）。</p>
+      <p class="rules-p">一部のキャラは「回復無効」「次のダイス/コイン/奥義が使用不可」といった<b>妨害効果</b>を持つ。読み合いの幅を広げる要素として、相手の選択肢を縛る一手も狙っていける。</p>
+    </div>
+
+    <div class="card-surface" style="text-align:left; display:flex; flex-direction:column; gap:10px;">
+      <h3 class="rules-h">💎 レアリティ</h3>
+      <p class="rules-p">キャラクターは対戦開始時に抽選で決まる。排出率は <b>SR 50%</b> ／ <b>UR 49%</b> ／ <b>LR 1%</b>。UR は対応するSRと同じ型で数値が一段強く、LR は唯一無二の最強格（ただし壊れすぎない範囲に調整）。</p>
+    </div>
+
+    <div class="card-surface" style="text-align:left; display:flex; flex-direction:column; gap:12px;">
+      <h3 class="rules-h">📇 カードの型（アーキタイプ）一覧</h3>
+      <div id="rules-archetype-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+    <button class="btn btn-block" id="btn-rules-back" style="max-width:260px; margin:0 auto;">戻る</button>
+  </section>
+
+  <section id="screen-room" class="menu-screen" hidden>
+    <div style="text-align:center;">
+      <h2 style="font-size:20px; font-weight:900;">ルームでマッチング</h2>
+      <p class="muted">同じ番号を入力した相手と対戦します</p>
+    </div>
+    <div class="room-tabs">
+      <div class="room-tab active" id="tab-create">ルームを作成</div>
+      <div class="room-tab" id="tab-join">ルームに参加</div>
+    </div>
+    <div class="card-surface" id="pane-create">
+      <p class="muted">「作成」を押すとルーム番号が発行されます</p>
+      <div class="room-code" id="room-code-display">----</div>
+      <button class="btn btn-primary btn-block" id="btn-create-room">ルームを作成する</button>
+      <p class="muted" id="wait-status" hidden style="margin-top:10px;">対戦相手の入室を待っています<span class="dots"></span></p>
+      <p class="joined-banner" id="joined-banner" hidden>🎉 プレイヤー2が入室しました！</p>
+    </div>
+    <div class="card-surface" id="pane-join" hidden>
+      <p class="muted">相手から伝えられた4桁のルーム番号を入力</p>
+      <input id="join-code-input" class="room-input" maxlength="4" inputmode="numeric" placeholder="0000">
+      <button class="btn btn-primary btn-block" id="btn-join-room" style="margin-top:12px;">ルームに入室する</button>
+    </div>
+    <button class="btn btn-ghost btn-block" id="btn-back-title">戻る</button>
+  </section>
+
+  <section id="screen-cointoss" class="menu-screen" hidden>
+    <p class="muted">先攻決めのコイントス</p>
+    <div class="coin3d"><div class="coin3d-inner" id="coin3d-inner">
+      <div class="coin-face front"><img src="assets/coin-heads.webp" alt="表"></div>
+      <div class="coin-face back"><img src="assets/coin-tails.webp" alt="裏"></div>
+    </div></div>
+    <p class="toss-result" id="toss-result-text">&nbsp;</p>
+  </section>
+
+  <section id="screen-prep" class="menu-screen" hidden>
+    <div class="prep-head">
+      <div class="result-eyebrow" style="justify-content:center; margin-bottom:4px;">◆ CARD BRIEFING PHASE ◆</div>
+      <h2 style="font-size:16px; font-weight:900;">カード確認タイム</h2>
+      <p class="muted">カードをタップすると効果を確認できます</p>
+      <div class="prep-timer">
+        <img class="timer-icon" src="assets/icon-timer.webp" alt="">
+        <div class="timer-track" style="width:90px;"><div class="timer-fill" id="prep-timer-fill"></div></div>
+        <div class="timer-num disp" id="prep-timer-num">60</div>
+      </div>
+    </div>
+    <div class="vs-stage vertical" id="prep-stage">
+      <!-- cards injected: opponent (top) / VS / self (bottom) -->
+    </div>
+    <div class="prep-ready-row">
+      <button class="btn" id="btn-ready-0">P1 準備OK<small>タップで準備完了</small></button>
+      <button class="btn" id="btn-ready-1">P2 準備OK<small>タップで準備完了</small></button>
+    </div>
+  </section>
+
+  <section id="screen-battle" class="menu-screen" hidden style="padding:0;">
+    <div class="arena" id="arena">
+      <div class="arena-topbar">
+        <div class="turn-chip" id="turn-chip">P1のターン</div>
+        <div class="arena-timer">
+          <img class="timer-icon" src="assets/icon-timer.webp" alt="">
+          <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+          <div class="timer-num disp" id="timer-num">60</div>
+        </div>
+      </div>
+      <div class="vs-stage" id="battle-stage"><!-- cards injected --></div>
+      <div class="resolve-overlay" id="resolve-overlay">
+        <div id="resolve-visual"></div>
+        <div class="resolve-label" id="resolve-label"></div>
+      </div>
+    </div>
+    <div class="logbar"><div class="logbar-inner" id="battle-log"></div></div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+
+  <section id="screen-result" class="menu-screen" hidden>
+    <div class="result-eyebrow">✦ ARENA BATTLE COMPLETE ✦</div>
+    <img class="crown" src="assets/crown-victory.webp" alt="">
+    <h1 class="victory-title" id="result-title">VICTORY</h1>
+    <p class="victory-sub">対戦終了</p>
+    <div class="medallion"><img src="assets/coin.jpg" alt=""></div>
+    <p class="winner-name" id="winner-name"></p>
+    <div class="result-stats">
+      <div class="result-stat"><div class="v disp" id="stat-time">00:00</div><div class="k">BATTLE TIME</div></div>
+      <div class="result-stat"><div class="v disp" id="stat-maxhit">0</div><div class="k">MAX STRIKE</div></div>
+      <div class="result-stat"><div class="v disp" id="stat-turns">0</div><div class="k">TURNS</div></div>
+    </div>
+    <button class="btn btn-primary btn-block" id="btn-restart" style="max-width:240px;">もう一度あそぶ</button>
+  </section>
+
+  <div class="modal-scrim" id="modal-scrim">
+    <div class="modal-sheet" id="modal-sheet"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // 13 archetypes: 12 are paired (SR + UR「改」), 1 (arche13) is LR-exclusive.
+  var SR_BASE = [
+    { id:'baran', arche:'鉄壁', name:'髙橋舞', icon:'🛡️', img:'assets/hero-baran-sr.jpg', urImg:'assets/hero-baran-ur.jpg', maxHp:22, grad:['#2b3a55','#141625'],
+      coin:{ H:{oppDmg:3, setSelfDR:2, text:'相手に3ダメージ。次に受けるダメージを-2する。'},
+             T:{oppDmg:2, text:'相手に2ダメージ。'} },
+      dice:{ 1:{oppDmg:1, setSelfDR:1, text:'相手に1ダメージ。次に受けるダメージを-1する。'},
+             2:{oppDmg:2, text:'相手に2ダメージ。'},
+             3:{oppDmg:3, text:'相手に3ダメージ。'},
+             4:{oppDmg:2, setSelfDR:2, text:'相手に2ダメージ。次に受けるダメージを-2する。'},
+             5:{oppDmg:3, text:'相手に3ダメージ。'},
+             6:{oppDmg:1, selfDmg:1, text:'相手に1ダメージ。自分に1ダメージ。'} },
+      ultimate:{type:'passive', threshold:8, mod:{reduceIncoming:1}, desc:'自分のHPが8以下のとき常時発動：受けるダメージを-1する。'} },
+
+    { id:'kagura', arche:'豪撃', name:'江角怜音', icon:'⚔️', img:'assets/hero-kagura-sr.jpg', urImg:'assets/hero-kagura-ur.jpg', maxHp:18, grad:['#5a1f3a','#1c0f1a'],
+      coin:{ H:{oppDmg:1, setOppNoHeal:true, text:'相手に1ダメージ。次の相手は回復できない。'},
+             T:{oppDmg:3, text:'相手に3ダメージ。'} },
+      dice:{ 1:{oppDmg:2, text:'相手に2ダメージ。'},
+             2:{oppDmg:3, text:'相手に3ダメージ。'},
+             3:{oppDmg:1, selfHeal:2, text:'相手に1ダメージ。自分のHPを2回復。'},
+             4:{oppDmg:4, text:'相手に4ダメージ。'},
+             5:{oppDmg:3, setOppNoHeal:true, text:'相手に3ダメージ。次の相手は回復できない。'},
+             6:{oppDmg:4, selfDmg:2, text:'相手に4ダメージ。自分に2ダメージ。'} },
+      ultimate:{type:'active', kind:'tripleGamble', gateHp:2, desc:'自分のHPが2以下の時のみ使用可：コインを3回投げ、すべて表なら相手のHPを自分と同じにし、続けてもう1度コイン/ダイスの行動ができる。外れても1度きり。'} },
+
+    { id:'runa', arche:'癒しの心', name:'大西葵', icon:'✨', img:'assets/hero-runa-sr.jpg', urImg:'assets/hero-runa-ur.jpg', maxHp:20, grad:['#134e4a','#0c1f1d'],
+      coin:{ H:{selfHeal:4, text:'自分のHPを4回復。'},
+             T:{oppDmg:3, text:'相手に3ダメージ。'} },
+      dice:{ 1:{selfHeal:2, text:'自分のHPを2回復。'},
+             2:{oppDmg:2, text:'相手に2ダメージ。'},
+             3:{oppDmg:1, selfHeal:3, text:'相手に1ダメージ。自分のHPを3回復。'},
+             4:{oppDmg:4, text:'相手に4ダメージ。'},
+             5:{oppDmg:3, selfHeal:1, text:'相手に3ダメージ。自分のHPを1回復。'},
+             6:{oppDmg:3, selfDmg:2, text:'相手に3ダメージ。自分に2ダメージ。'} },
+      ultimate:{type:'passive', threshold:5, mod:{healBonus:2}, desc:'自分のHPが5以下のとき常時発動：自分の回復量+2する。'} },
+
+    { id:'nova', arche:'一直線', name:'逢田珠里依', icon:'🔥', img:'assets/hero-nova-sr.jpg', urImg:'assets/hero-nova-ur.jpg', maxHp:16, grad:['#5a2e12','#1f120a'],
+      coin:{ H:{oppDmg:4, text:'相手に4ダメージ。'},
+             T:{oppDmg:2, selfDmg:1, text:'相手に2ダメージ。自分に1ダメージ。'} },
+      dice:{ 1:{oppDmg:1, selfDmg:3, text:'相手に1ダメージ。自分に3ダメージ。'},
+             2:{oppDmg:2, selfDmg:2, text:'相手に2ダメージ。自分に2ダメージ。'},
+             3:{oppDmg:3, selfDmg:2, text:'相手に3ダメージ。自分に2ダメージ。'},
+             4:{oppDmg:4, text:'相手に4ダメージ。'},
+             5:{oppDmg:5, text:'相手に5ダメージ。'},
+             6:{oppDmg:6, text:'相手に6ダメージ。'} },
+      ultimate:{type:'active', bonus:0, isDoubleDice:true, desc:'アクションの代わりに使用：ダイスを2回振り、合計ダメージを与える。ゲーム中1回のみ。'} },
+
+    { id:'veru', arche:'策謀', name:'山田桃佳', icon:'🔮', img:'assets/hero-veru-sr.jpg', urImg:'assets/hero-veru-ur.jpg', maxHp:17, grad:['#3a1f5a','#160c22'],
+      coin:{ H:{oppDmg:5, selfDmg:1, text:'相手に5ダメージ。自分に1ダメージ。'},
+             T:{oppDmg:2, setSelfDR:2, text:'相手に2ダメージ。次に受けるダメージを-2する。'} },
+      dice:{ 1:{oppDmg:1, setSelfNextDmgBonus:2, text:'相手に1ダメージ。次の自分の攻撃ダメージ+2する。'},
+             2:{oppDmg:2, text:'相手に2ダメージ。'},
+             3:{oppDmg:3, text:'相手に3ダメージ。'},
+             4:{oppDmg:2, setSelfDR:2, text:'相手に2ダメージ。次に受けるダメージを-2する。'},
+             5:{oppDmg:3, setSelfDR:1, text:'相手に3ダメージ。次に受けるダメージを-1する。'},
+             6:{oppDmg:4, selfDmg:2, text:'相手に4ダメージ。自分に2ダメージ。'} },
+      ultimate:{type:'active', kind:'reverseTrap', desc:'アクションの代わりに使用：相手の次の行動について、回復は自傷に、こちらへ与わるダメージは相手自身の回復に反転する罠を仕掛ける。ゲーム中1回のみ。'} },
+
+    { id:'hayate', arche:'金縛り', name:'天野香乃愛', icon:'🌀', img:'assets/hero-hayate-sr.jpg', urImg:'assets/hero-hayate-ur.jpg', maxHp:17, grad:['#153a4a','#0b1a22'],
+      coin:{ H:{oppDmg:4, setOppDiceLock:true, text:'相手に4ダメージ。次の相手はダイスを使用できない。'},
+             T:{oppDmg:3, text:'相手に3ダメージ。'} },
+      dice:{ 1:{oppDmg:1, setOppDiceLock:true, text:'相手に1ダメージ。次の相手はダイスを使用できない。'},
+             2:{oppDmg:2, text:'相手に2ダメージ。'},
+             3:{oppDmg:2, text:'相手に2ダメージ。'},
+             4:{oppDmg:3, setOppDiceLock:true, text:'相手に3ダメージ。次の相手はダイスを使用できない。'},
+             5:{oppDmg:3, text:'相手に3ダメージ。'},
+             6:{oppDmg:4, selfDmg:1, text:'相手に4ダメージ。自分に1ダメージ。'} },
+      ultimate:{type:'passive', threshold:9, mod:{coinBonus:1}, desc:'自分のHPが9以下のとき常時発動：コインアクションのダメージ+1する。'} },
+
+    { id:'gaia', arche:'不屈', name:'小澤愛実', icon:'🌋', img:'assets/hero-gaia-sr.jpg', urImg:'assets/hero-gaia-ur.jpg', maxHp:16, grad:['#4a2010','#20100a'],
+      coin:{ H:{oppDmg:4, selfDmg:2, text:'相手に4ダメージ。自分に2ダメージ。'},
+             T:{oppDmg:3, text:'相手に3ダメージ。'} },
+      dice:{ 1:{oppDmg:2, selfDmg:1, text:'相手に2ダメージ。自分に1ダメージ。'},
+             2:{oppDmg:3, selfDmg:1, text:'相手に3ダメージ。自分に1ダメージ。'},
+             3:{oppDmg:1, text:'相手に1ダメージ。'},
+             4:{oppDmg:4, selfDmg:1, text:'相手に4ダメージ。自分に1ダメージ。'},
+             5:{oppDmg:5, selfDmg:2, text:'相手に5ダメージ。自分に2ダメージ。'},
+             6:{oppDmg:6, selfDmg:3, text:'相手に6ダメージ。自分に3ダメージ。'} },
+      ultimate:{type:'trigger', kind:'deathSave', saveHp:5, desc:'自分のHPが0になる瞬間、1度だけ発動：サイコロを振り、5か6ならHPが5の状態で生き残る。'} },
+
+    { id:'elsie', arche:'守護', name:'藤沢莉子', icon:'🛡️', img:'assets/hero-elsie-sr.jpg', urImg:'assets/hero-elsie-ur.jpg', maxHp:21, grad:['#1f4a3a','#0c221a'],
+      coin:{ H:{oppDmg:3, setSelfDR:1, text:'相手に3ダメージ。次に受けるダメージを-1する。'},
+             T:{selfHeal:3, text:'自分のHPを3回復。'} },
+      dice:{ 1:{selfHeal:2, text:'自分のHPを2回復。'},
+             2:{oppDmg:2, setSelfDR:1, text:'相手に2ダメージ。次に受けるダメージを-1する。'},
+             3:{oppDmg:3, text:'相手に3ダメージ。'},
+             4:{oppDmg:1, selfHeal:2, text:'相手に1ダメージ。自分のHPを2回復。'},
+             5:{oppDmg:4, setSelfDR:2, text:'相手に4ダメージ。次に受けるダメージを-2する。'},
+             6:{oppDmg:4, selfDmg:1, text:'相手に4ダメージ。自分に1ダメージ。'} },
+      ultimate:{type:'passive', threshold:12, mod:{reduceIncoming:1}, desc:'自分のHPが12以下のとき常時発動：受けるダメージを-1する。'} },
+
+    { id:'jin', arche:'速攻', name:'大信田美月', icon:'💨', img:'assets/hero-jin-sr.jpg', urImg:'assets/hero-jin-ur.jpg', maxHp:16, grad:['#3a3a55','#171725'],
+      coin:{ H:{oppDmg:4, text:'相手に4ダメージ。'},
+             T:{oppDmg:2, setOppCoinLock:true, text:'相手に2ダメージ。次の相手はコインを使用できない。'} },
+      dice:{ 1:{oppDmg:2, text:'相手に2ダメージ。'},
+             2:{oppDmg:2, text:'相手に2ダメージ。'},
+             3:{oppDmg:3, setOppCoinLock:true, text:'相手に3ダメージ。次の相手はコインを使用できない。'},
+             4:{oppDmg:3, text:'相手に3ダメージ。'},
+             5:{oppDmg:4, text:'相手に4ダメージ。'},
+             6:{oppDmg:5, setOppCoinLock:true, text:'相手に5ダメージ。次の相手はコインを使用できない。'} },
+      ultimate:{type:'active', bonus:0, desc:'アクションの代わりに使用：相手に6ダメージを与える。ゲーム中1回のみ。', effect:{oppDmg:6, text:'奥義発動！相手に6ダメージ！'}} },
+
+    { id:'nox', arche:'吸血', name:'市原愛弓', icon:'🦇', img:'assets/hero-nox-sr.jpg', urImg:'assets/hero-nox-ur.jpg', maxHp:19, grad:['#3a1030','#180814'],
+      coin:{ H:{oppDmg:3, selfHeal:2, text:'相手に3ダメージ。自分のHPを2回復。'},
+             T:{oppDmg:2, selfHeal:1, text:'相手に2ダメージ。自分のHPを1回復。'} },
+      dice:{ 1:{oppDmg:1, selfHeal:1, text:'相手に1ダメージ。自分のHPを1回復。'},
+             2:{oppDmg:2, selfHeal:1, text:'相手に2ダメージ。自分のHPを1回復。'},
+             3:{oppDmg:3, text:'相手に3ダメージ。'},
+             4:{oppDmg:3, selfHeal:2, text:'相手に3ダメージ。自分のHPを2回復。'},
+             5:{oppDmg:4, selfHeal:1, text:'相手に4ダメージ。自分のHPを1回復。'},
+             6:{oppDmg:5, selfDmg:2, text:'相手に5ダメージ。自分に2ダメージ。'} },
+      ultimate:{type:'passive', threshold:9, mod:{healBonus:2}, desc:'自分のHPが9以下のとき常時発動：自分の回復量+2する。'} },
+
+    { id:'basara', arche:'相討ち', name:'山野愛月', icon:'💥', img:'assets/hero-basara-sr.jpg', urImg:'assets/hero-basara-ur.jpg', maxHp:18, grad:['#4a1515','#1f0a0a'],
+      coin:{ H:{oppDmg:4, selfDmg:2, text:'相手に4ダメージ。自分に2ダメージ。'},
+             T:{oppDmg:0, text:'相手にダメージを与えられなかった。'} },
+      dice:{ 1:{oppDmg:0, setOppUltLock:true, text:'相手にダメージを与えられなかった。次の相手は奥義を使用できない。'},
+             2:{oppDmg:1, selfDmg:1, text:'相手に1ダメージ。自分に1ダメージ。'},
+             3:{oppDmg:2, selfDmg:1, text:'相手に2ダメージ。自分に1ダメージ。'},
+             4:{oppDmg:3, selfDmg:2, text:'相手に3ダメージ。自分に2ダメージ。'},
+             5:{oppDmg:4, selfDmg:2, text:'相手に4ダメージ。自分に2ダメージ。'},
+             6:{oppDmg:5, selfDmg:3, text:'相手に5ダメージ。自分に3ダメージ。'} },
+      ultimate:{type:'passive', threshold:7, mod:{allBonus:2}, desc:'自分のHPが7以下のとき常時発動：与えるダメージ+2する。'} },
+
+    { id:'sora', arche:'鏡合わせ', name:'村山結香', icon:'🪞', img:'assets/hero-sora-sr.jpg', urImg:'assets/hero-sora-ur.jpg', maxHp:20, grad:['#1f2f4a','#0d1420'],
+      coin:{ H:{oppDmg:2, setSelfDR:2, text:'相手に2ダメージ。次に受けるダメージを-2する。'},
+             T:{oppDmg:3, setSelfDR:1, text:'相手に3ダメージ。次に受けるダメージを-1する。'} },
+      dice:{ 1:{oppDmg:1, setSelfDR:1, text:'相手に1ダメージ。次に受けるダメージを-1する。'},
+             2:{oppDmg:2, text:'相手に2ダメージ。'},
+             3:{oppDmg:2, setSelfDR:2, text:'相手に2ダメージ。次に受けるダメージを-2する。'},
+             4:{oppDmg:3, text:'相手に3ダメージ。'},
+             5:{oppDmg:3, setSelfDR:1, text:'相手に3ダメージ。次に受けるダメージを-1する。'},
+             6:{oppDmg:4, selfDmg:1, text:'相手に4ダメージ。自分に1ダメージ。'} },
+      ultimate:{type:'active', bonus:0, desc:'アクションの代わりに使用：相手に4ダメージを与え、自分のHPを4回復する。ゲーム中1回のみ。', effect:{oppDmg:4, selfHeal:4, text:'奥義発動！相手に4ダメージ、自分のHPを4回復！'}} }
+  ];
+
+  var LR_BASE = {
+    id:'artemisia', arche:'天啓', name:'指原莉乃', icon:'👑', img:'assets/hero-artemisia-lr.jpg', maxHp:26, grad:['#4a3a10','#221c08'],
+    coin:{ H:{oppDmg:5, setSelfDR:1, text:'相手に5ダメージ。次に受けるダメージを-1する。'},
+           T:{oppDmg:4, setOppDiceLock:true, text:'相手に4ダメージ。次の相手はダイスを使用できない。'} },
+    dice:{ 1:{oppDmg:2, setSelfDR:1, text:'相手に2ダメージ。次に受けるダメージを-1する。'},
+           2:{oppDmg:3, setOppCoinLock:true, text:'相手に3ダメージ。次の相手はコインを使用できない。'},
+           3:{oppDmg:4, selfHeal:2, text:'相手に4ダメージ。自分のHPを2回復。'},
+           4:{oppDmg:4, setSelfDR:2, setOppUltLock:true, text:'相手に4ダメージ。次に受けるダメージを-2する。次の相手は奥義を使用できない。'},
+           5:{oppDmg:6, text:'相手に6ダメージ。'},
+           6:{oppDmg:7, selfDmg:2, text:'相手に7ダメージ。自分に2ダメージ。'} },
+    ultimate:{type:'passive', threshold:14, mod:{reduceIncoming:1, allBonus:1}, desc:'自分のHPが14以下のとき常時発動：受けるダメージを-1、与えるダメージ+1する。'}
+  };
+
+  // UR「改」は各SRの型そのまま・数値だけ一段強い自動生成版（HP+2、コイン表/ダイス5-6+1、しきい値+1、奥義+1）
+  function bumpDmg(e, n){ var c = JSON.parse(JSON.stringify(e)); if (c.oppDmg>0) c.oppDmg += n; return c; }
+  function deriveUR(sr){
+    var c = JSON.parse(JSON.stringify(sr));
+    c.id = sr.id + '_ur';
+    c.img = sr.urImg || sr.img;
+    c.maxHp = sr.maxHp + 2;
+    c.coin = { H: bumpDmg(sr.coin.H, 1), T: JSON.parse(JSON.stringify(sr.coin.T)) };
+    c.dice = {};
+    for (var n=1;n<=6;n++){
+      c.dice[n] = (n>=5) ? bumpDmg(sr.dice[n], 1) : JSON.parse(JSON.stringify(sr.dice[n]));
+    }
+    c.ultimate = JSON.parse(JSON.stringify(sr.ultimate));
+    if (c.ultimate.type==='passive'){
+      c.ultimate.threshold += 1;
+    } else if (c.ultimate.type==='trigger'){
+      c.ultimate.saveHp = (c.ultimate.saveHp||5) + 1;
+    } else if (c.ultimate.kind==='tripleGamble'){
+      c.ultimate.gateHp = (c.ultimate.gateHp||2) + 1;
+    } else if (c.ultimate.kind==='reverseTrap'){
+      // 数値強化なし。HP+2とダイス5-6+1が改の強化分。
+    } else {
+      c.ultimate.bonus = (c.ultimate.bonus||0) + 1;
+    }
+    return c;
+  }
+
+  var CHARACTERS = SR_BASE.map(function(c){ return Object.assign({rarity:'SR', frame:'assets/frame-sr.webp'}, c); })
+    .concat(SR_BASE.map(function(c){ return Object.assign({rarity:'UR', frame:'assets/frame-ur.webp'}, deriveUR(c)); }))
+    .concat([Object.assign({rarity:'LR', frame:'assets/frame-lr.webp'}, LR_BASE)]);
+
+  var PIP_LAYOUTS = {
+    1:[[2,2]],
+    2:[[1,1],[3,3]],
+    3:[[1,1],[2,2],[3,3]],
+    4:[[1,1],[1,3],[3,1],[3,3]],
+    5:[[1,1],[1,3],[2,2],[3,1],[3,3]],
+    6:[[1,1],[1,3],[2,1],[2,3],[3,1],[3,3]]
+  };
+
+  function charById(id){ for (var i=0;i<CHARACTERS.length;i++){ if (CHARACTERS[i].id===id) return CHARACTERS[i]; } return null; }
+  function $(id){ return document.getElementById(id); }
+  function show(id){ $(id).hidden = false; }
+  function hide(id){ $(id).hidden = true; }
+  function goto(screenId){
+    ['screen-title','screen-room','screen-cointoss','screen-prep','screen-battle','screen-result','screen-rules'].forEach(function(s){ hide(s); });
+    show(screenId);
+  }
+  function toast(msg){
+    var t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+    document.body.appendChild(t); setTimeout(function(){ t.remove(); },2200);
+  }
+
+  var PREP_SECONDS = 60;
+  var TURN_SECONDS = 60;
+
+  var state = {
+    players:[
+      {label:'P1', charId:null, hp:0, maxHp:0, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false},
+      {label:'P2', charId:null, hp:0, maxHp:0, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false}
+    ],
+    current:0,
+    timer:TURN_SECONDS,
+    timerId:null,
+    busy:false,
+    vsNPC:false,
+    matchStats:{startTime:0, turns:0, maxHit:0}
+  };
+
+  // ---------- Rules page ----------
+  function cardDetailHTML(ch){
+    var html = '<div class="cd-card">';
+    html += '<div class="cd-head"><span class="vfx-rarity '+ch.rarity.toLowerCase()+'">'+ch.rarity+'</span> '+ch.name+' <span class="hp disp">HP '+ch.maxHp+'</span></div>';
+    html += '<table class="action-table"><caption>🪙 コインアクション</caption>';
+    html += '<tr><td class="key">表</td><td class="eff">'+ch.coin.H.text+'</td></tr>';
+    html += '<tr><td class="key">裏</td><td class="eff">'+ch.coin.T.text+'</td></tr></table>';
+    html += '<table class="action-table"><caption>🎲 ダイスアクション</caption>';
+    [1,2,3,4,5,6].forEach(function(n){ html += '<tr><td class="key">'+n+'</td><td class="eff">'+ch.dice[n].text+'</td></tr>'; });
+    html += '</table>';
+    html += '<div class="ult-box"><div class="ult-title">✨ 奥義</div><div>'+ch.ultimate.desc+'</div></div>';
+    html += '</div>';
+    return html;
+  }
+  function renderRulesArchetypeList(){
+    var wrap = $('rules-archetype-list');
+    var html = '';
+    SR_BASE.forEach(function(srBase, idx){
+      var sr = charById(srBase.id);
+      var ur = charById(srBase.id+'_ur');
+      html += '<details class="arche-detail"'+(idx===0?' open':'')+'>';
+      html +=   '<summary class="arche-summary">';
+      html +=     '<div class="arche-icon" style="background:radial-gradient(circle at 50% 30%, '+sr.grad[0]+', '+sr.grad[1]+' 75%);">'+sr.icon+'</div>';
+      html +=     '<div class="arche-name">'+sr.arche+'型　<span class="muted" style="font-size:10.5px;">'+sr.name+'（SR / UR）</span></div>';
+      html +=   '</summary>';
+      html +=   '<div class="arche-body">'+cardDetailHTML(sr)+cardDetailHTML(ur)+'</div>';
+      html += '</details>';
+    });
+    var lr = charById(LR_BASE.id);
+    html += '<details class="arche-detail">';
+    html +=   '<summary class="arche-summary">';
+    html +=     '<div class="arche-icon" style="background:radial-gradient(circle at 50% 30%, '+LR_BASE.grad[0]+', '+LR_BASE.grad[1]+' 75%);">'+LR_BASE.icon+'</div>';
+    html +=     '<div class="arche-name">'+LR_BASE.arche+'型（LR専用）　<span class="muted" style="font-size:10.5px;">'+LR_BASE.name+'</span></div>';
+    html +=   '</summary>';
+    html +=   '<div class="arche-body">'+cardDetailHTML(lr)+'</div>';
+    html += '</details>';
+    wrap.innerHTML = html;
+  }
+  $('btn-to-rules').addEventListener('click', function(){ renderRulesArchetypeList(); goto('screen-rules'); });
+  $('btn-rules-back').addEventListener('click', function(){ goto('screen-title'); });
+
+  // ---------- Title / Room ----------
+  $('btn-to-room').addEventListener('click', function(){ state.vsNPC = false; goto('screen-room'); });
+  $('btn-back-title').addEventListener('click', function(){ goto('screen-title'); });
+  $('tab-create').addEventListener('click', function(){ $('tab-create').classList.add('active'); $('tab-join').classList.remove('active'); show('pane-create'); hide('pane-join'); });
+  $('tab-join').addEventListener('click', function(){ $('tab-join').classList.add('active'); $('tab-create').classList.remove('active'); show('pane-join'); hide('pane-create'); });
+
+  $('btn-create-room').addEventListener('click', function(){
+    var code = String(Math.floor(1000 + Math.random()*9000));
+    $('room-code-display').textContent = code;
+    this.disabled = true;
+    show('wait-status');
+    setTimeout(function(){ hide('wait-status'); show('joined-banner'); setTimeout(startMatch,900); }, 2200);
+  });
+  $('join-code-input').addEventListener('input', function(e){ e.target.value = e.target.value.replace(/[^0-9]/g,'').slice(0,4); });
+  $('btn-join-room').addEventListener('click', function(){
+    if ($('join-code-input').value.length !== 4){ toast('4桁のルーム番号を入力してください'); return; }
+    startMatch();
+  });
+
+  function startMatch(){
+    goto('screen-cointoss');
+    var inner = $('coin3d-inner');
+    inner.classList.remove('spinning'); void inner.offsetWidth; inner.classList.add('spinning');
+    $('toss-result-text').innerHTML = '&nbsp;';
+    setTimeout(function(){
+      var first = Math.random() < 0.5 ? 0 : 1;
+      state.current = first;
+      var lbl = first===0 ? 'P1' : (state.vsNPC ? 'NPC' : 'P2'), cls = first===0 ? 'p1' : 'p2';
+      $('toss-result-text').innerHTML = '<span class="name '+cls+'">'+lbl+'</span> が先攻です！';
+      setTimeout(startPrep, 1100);
+    }, 1550);
+  }
+
+  $('btn-to-npc').addEventListener('click', function(){
+    state.vsNPC = true;
+    startMatch();
+  });
+
+  // ---------- Prep (draw + confirm) ----------
+  // ガチャ抽選率: SR 50% / UR 49% / LR 1%
+  function rollRarity(){
+    var r = Math.random();
+    return r < 0.50 ? 'SR' : (r < 0.99 ? 'UR' : 'LR');
+  }
+  function drawCharacter(excludeId){
+    var rarity = rollRarity();
+    var pool = CHARACTERS.filter(function(c){ return c.rarity===rarity && c.id!==excludeId; });
+    if (!pool.length){ pool = CHARACTERS.filter(function(c){ return c.id!==excludeId; }); }
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  function startPrep(){
+    state.busy = false;
+    var pick0 = drawCharacter(null);
+    var pick1 = drawCharacter(pick0.id);
+    state.players[0] = {label:'P1', charId:pick0.id, hp:pick0.maxHp, maxHp:pick0.maxHp, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false};
+    state.players[1] = {label:state.vsNPC?'NPC':'P2', charId:pick1.id, hp:pick1.maxHp, maxHp:pick1.maxHp, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false};
+
+    goto('screen-prep');
+    $('btn-ready-0').classList.remove('ready'); $('btn-ready-0').disabled = false;
+    $('btn-ready-0').innerHTML = 'P1 準備OK<small>タップで準備完了</small>';
+    if (state.vsNPC){
+      tryReady(1);
+      $('btn-ready-1').innerHTML = '🤖 NPC 準備完了';
+    } else {
+      $('btn-ready-1').classList.remove('ready'); $('btn-ready-1').disabled = false;
+      $('btn-ready-1').innerHTML = 'P2 準備OK<small>タップで準備完了</small>';
+    }
+
+    var stage = $('prep-stage');
+    stage.innerHTML = buildCardHTML(1,{small:true}) + '<div class="vs-mark">VS</div>' + buildCardHTML(0,{small:true});
+    bindCardPress(stage);
+
+    clearInterval(state.prepTimerId);
+    var t = PREP_SECONDS;
+    $('prep-timer-num').textContent = t;
+    $('prep-timer-fill').style.width = '100%';
+    state.prepTimerId = setInterval(function(){
+      t--; $('prep-timer-num').textContent = Math.max(0,t);
+      $('prep-timer-fill').style.width = Math.max(0,(t/PREP_SECONDS)*100)+'%';
+      if (t<=0){ clearInterval(state.prepTimerId); goToBattle(); }
+    }, 1000);
+  }
+
+  function tryReady(idx){
+    state.players[idx].ready = true;
+    var b = $('btn-ready-'+idx);
+    b.classList.add('ready');
+    b.innerHTML = '準備完了 ✓';
+    b.disabled = true;
+    if (state.players[0].ready && state.players[1].ready){
+      clearInterval(state.prepTimerId);
+      goToBattle();
+    }
+  }
+  $('btn-ready-0').addEventListener('click', function(){ tryReady(0); });
+  $('btn-ready-1').addEventListener('click', function(){ tryReady(1); });
+
+  function goToBattle(){
+    state.busy = false;
+    clearInterval(state.timerId);
+    state.matchStats = {startTime:Date.now(), turns:0, maxHit:0};
+    $('battle-log').innerHTML = '';
+    goto('screen-battle');
+    renderBattle();
+    beginTurn();
+  }
+
+  // ---------- Card HTML (shared by prep + battle) ----------
+  function buildCardHTML(i, opts){
+    opts = opts || {};
+    var p = state.players[i];
+    var ch = charById(p.charId);
+    var pClass = i===0 ? 'p1' : 'p2';
+    var isActive = (state.screenIsBattle) && state.current === i && p.hp > 0;
+    var ultActiveNow = ch.ultimate.type==='passive' && p.hp <= ch.ultimate.threshold && p.hp > 0;
+    var pct = Math.max(0, Math.round((p.hp / p.maxHp)*100));
+    var koClass = p.hp<=0 ? ' ko' : '';
+
+    var ultIcon = '';
+    if (ch.ultimate.type==='passive'){ ultIcon = ultActiveNow ? '🌟' : ''; }
+    else if (ch.ultimate.type==='trigger'){ ultIcon = p.ultimateUsed ? '' : '🛟'; }
+    else { ultIcon = p.ultimateUsed ? '' : '✨'; }
+    if (p.diceLockNext || p.coinLockNext || p.ultLockNext) ultIcon = '🔒';
+
+    var rarClass = 'rar-'+ch.rarity.toLowerCase();
+
+    var html = '';
+    html += '<div class="vfx-sway '+pClass+'">';
+    html += '<div class="vfx-card '+pClass+' '+rarClass+koClass+(isActive?' my-turn':'')+'" data-idx="'+i+'">';
+    if (ultIcon) html += '<div class="vfx-ultbadge">'+ultIcon+'</div>';
+    html += '<div class="vfx-window">';
+    if (ch.img){
+      html += '<img src="'+ch.img+'" alt="">';
+    } else {
+      html += '<div class="vfx-icon-fallback" style="background:radial-gradient(circle at 50% 30%, '+ch.grad[0]+', '+ch.grad[1]+' 75%);">'+ch.icon+'</div>';
+    }
+    html += '</div>';
+    html += '<img class="vfx-frame-img" src="'+ch.frame+'" alt="">';
+    html += '<div class="vfx-arche">'+ch.arche+'</div>';
+    html += '<div class="vfx-cname">'+ch.name+'</div>';
+    html += '<div class="vfx-hpzone" id="hptrack-'+i+'">';
+    html +=   '<div class="vfx-hpnum disp">'+Math.max(0,p.hp)+' / '+p.maxHp+'</div>';
+    html +=   '<div class="vfx-hptrack"><div class="vfx-hpfill" style="width:'+pct+'%"></div></div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function bindCardPress(container){
+    container.querySelectorAll('.vfx-card').forEach(function(card){
+      var idx = parseInt(card.getAttribute('data-idx'),10);
+      card.addEventListener('pointerdown', function(){ card.classList.add('pressed'); });
+      card.addEventListener('pointerup', function(){ card.classList.remove('pressed'); });
+      card.addEventListener('pointerleave', function(){ card.classList.remove('pressed'); });
+      card.addEventListener('click', function(){ openEffectModal(idx); });
+    });
+  }
+
+  function openEffectModal(idx){
+    var p = state.players[idx];
+    var ch = charById(p.charId);
+    var pClass = idx===0?'p1':'p2';
+    var ultActiveNow = ch.ultimate.type==='passive' && p.hp <= ch.ultimate.threshold && p.hp > 0;
+    var html = '';
+    html += '<div class="modal-head">';
+    if (ch.img){
+      html += '<div class="modal-icon" style="background:radial-gradient(circle at 50% 30%, '+ch.grad[0]+', '+ch.grad[1]+' 75%); padding:0; overflow:hidden;"><img src="'+ch.img+'" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top center;"></div>';
+    } else {
+      html += '<div class="modal-icon" style="background:radial-gradient(circle at 50% 30%, '+ch.grad[0]+', '+ch.grad[1]+' 75%);">'+ch.icon+'</div>';
+    }
+    html +=   '<div><div class="modal-title">'+ch.name+' <span class="vfx-rarity '+ch.rarity.toLowerCase()+'">'+ch.rarity+'</span></div><div class="muted" style="text-align:left;">'+p.label+' ・ HP '+ch.maxHp+' ・ '+ch.arche+'型</div></div>';
+    html +=   '<button class="modal-close" id="modal-close-btn">✕</button>';
+    html += '</div>';
+    html += '<table class="action-table"><caption>🪙 コインアクション</caption>';
+    html += '<tr><td class="key">表</td><td class="eff">'+ch.coin.H.text+'</td></tr>';
+    html += '<tr><td class="key">裏</td><td class="eff">'+ch.coin.T.text+'</td></tr></table>';
+    html += '<table class="action-table"><caption>🎲 ダイスアクション</caption>';
+    [1,2,3,4,5,6].forEach(function(n){ html += '<tr><td class="key">'+n+'</td><td class="eff">'+ch.dice[n].text+'</td></tr>'; });
+    html += '</table>';
+    html += '<div class="ult-box"><div class="ult-title">✨ 奥義　';
+    if (ch.ultimate.type==='passive'){ html += '<span class="badge '+(ultActiveNow?'badge-on':'badge-off')+'">'+(ultActiveNow?'発動中':'未発動')+'</span>'; }
+    else if (ch.ultimate.type==='trigger'){ html += '<span class="badge '+(p.ultimateUsed?'badge-off':'badge-on')+'">'+(p.ultimateUsed?'発動済み':'スタンバイ')+'</span>'; }
+    else { html += '<span class="badge '+(p.ultimateUsed?'badge-off':'badge-on')+'">'+(p.ultimateUsed?'使用済み':'使用可')+'</span>'; }
+    if (p.diceLockNext) html += ' <span class="badge badge-off">🔒次ダイス不可</span>';
+    if (p.coinLockNext) html += ' <span class="badge badge-off">🔒次コイン不可</span>';
+    if (p.ultLockNext) html += ' <span class="badge badge-off">🔒次奥義不可</span>';
+    html += '</div><div>'+ch.ultimate.desc+'</div></div>';
+
+    $('modal-sheet').innerHTML = html;
+    $('modal-scrim').classList.add('open');
+    $('modal-close-btn').addEventListener('click', closeEffectModal);
+  }
+  function closeEffectModal(){ $('modal-scrim').classList.remove('open'); }
+  $('modal-scrim').addEventListener('click', function(e){ if (e.target === $('modal-scrim')) closeEffectModal(); });
+
+  // ---------- Battle ----------
+  state.screenIsBattle = false;
+  function renderBattle(){
+    state.screenIsBattle = true;
+    var turnLabel = state.current===0 ? 'P1' : (state.vsNPC ? '🤖 NPC' : 'P2');
+    $('turn-chip').textContent = turnLabel + 'のターン';
+    $('turn-chip').className = 'turn-chip ' + (state.current===0?'p1':'p2');
+
+    var stage = $('battle-stage');
+    stage.innerHTML = buildCardHTML(0,{}) + '<div class="vs-mark"></div>' + buildCardHTML(1,{});
+    bindCardPress(stage);
+
+    renderActionBar();
+  }
+
+  function renderActionBar(){
+    var bar = $('actionbar');
+    var idx = state.current;
+    var p = state.players[idx];
+    var ch = charById(p.charId);
+
+    if (p.hp <= 0){ bar.innerHTML = '<div class="ko-note">対戦終了処理中…</div>'; return; }
+
+    if (state.vsNPC && idx===1){ bar.innerHTML = '<div class="ko-note">🤖 NPCが考え中<span class="dots"></span></div>'; return; }
+
+    var html = '<div class="action-buttons">';
+    html += '<button class="btn" data-act="coin" '+(p.coinLockNext?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-coin.webp" alt="">コイン'+(p.coinLockNext?'<small>使用不可</small>':'')+'</button>';
+    html += '<button class="btn" data-act="dice" '+(p.diceLockNext?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-dice.webp" alt="">ダイス'+(p.diceLockNext?'<small>使用不可</small>':'')+'</button>';
+    if (ch.ultimate.type==='active'){
+      var gateOk = !(ch.ultimate.kind==='tripleGamble') || (p.hp <= (ch.ultimate.gateHp||2));
+      var ultDisabled = p.ultimateUsed || p.ultLockNext || !gateOk;
+      var ultSmall = p.ultimateUsed ? '1回限り' : (p.ultLockNext ? '使用不可' : (!gateOk ? 'HP'+(ch.ultimate.gateHp||2)+'以下で使用可' : '1回限り'));
+      html += '<button class="btn" data-act="ultimate" '+(ultDisabled?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-ultimate.webp" alt="">奥義<small>'+ultSmall+'</small></button>';
+    }
+    html += '</div>';
+    bar.innerHTML = html;
+    bar.querySelectorAll('[data-act]').forEach(function(b){
+      b.addEventListener('click', function(){ if (!state.busy) handleAction(b.getAttribute('data-act')); });
+    });
+  }
+
+  function beginTurn(){
+    var p = state.players[state.current];
+    if (state.vsNPC && state.current===1 && p.hp>0){
+      clearInterval(state.timerId);
+      $('timer-num').textContent = '🤖';
+      $('timer-fill').style.width = '100%';
+      runNPCTurn();
+    } else {
+      startTimer();
+    }
+  }
+
+  function startTimer(){
+    clearInterval(state.timerId);
+    state.timer = TURN_SECONDS;
+    updateTimerUI();
+    state.timerId = setInterval(function(){
+      state.timer--; updateTimerUI();
+      if (state.timer<=0){
+        clearInterval(state.timerId);
+        var fallback = state.players[state.current].coinLockNext ? 'dice' : 'coin';
+        toast('⏰ 時間切れ！自動で'+(fallback==='coin'?'コイン':'ダイス')+'を使用しました');
+        handleAction(fallback);
+      }
+    }, 1000);
+  }
+  function updateTimerUI(){
+    $('timer-num').textContent = state.timer;
+    $('timer-fill').style.width = Math.max(0,(state.timer/TURN_SECONDS)*100)+'%';
+  }
+
+  function cloneEffect(e){ return JSON.parse(JSON.stringify(e || {})); }
+
+  function setActionButtonsDisabled(disabled){
+    document.querySelectorAll('#actionbar [data-act]').forEach(function(b){ b.disabled = disabled || (b.getAttribute('data-act')==='ultimate' && state.players[state.current].ultimateUsed); });
+  }
+
+  // ---------- NPC AI: expected-value greedy decision ----------
+  function evaluateEffect(rawEffect, method, self, opp){
+    var ch = charById(self.charId);
+    var e = cloneEffect(rawEffect);
+    e.oppDmg = e.oppDmg||0; e.selfDmg = e.selfDmg||0; e.selfHeal = e.selfHeal||0;
+
+    if (self.dmgBonusNext && e.oppDmg>0){ e.oppDmg += self.dmgBonusNext; }
+    if (ch.ultimate.type==='passive' && self.hp<=ch.ultimate.threshold && self.hp>0){
+      var m = ch.ultimate.mod || {};
+      if (m.healBonus && e.selfHeal>0) e.selfHeal += m.healBonus;
+      if (m.diceBonus && method==='dice' && e.oppDmg>0) e.oppDmg += m.diceBonus;
+      if (m.coinBonus && method==='coin' && e.oppDmg>0) e.oppDmg += m.coinBonus;
+      if (m.allBonus && e.oppDmg>0) e.oppDmg += m.allBonus;
+    }
+    if (self.noHealNext && e.selfHeal>0){ e.selfHeal = 0; }
+
+    var reversedHeal = 0;
+    if (self.reverseNext){
+      if (e.selfHeal>0){ e.selfDmg += e.selfHeal; e.selfHeal = 0; }
+      if (e.oppDmg>0){ reversedHeal = e.oppDmg; e.oppDmg = 0; }
+    }
+
+    var dmgToOpp = e.oppDmg;
+    if (dmgToOpp>0){
+      var oppCh = charById(opp.charId);
+      if (oppCh.ultimate.type==='passive' && opp.hp<=oppCh.ultimate.threshold && opp.hp>0 && oppCh.ultimate.mod && oppCh.ultimate.mod.reduceIncoming){
+        dmgToOpp = Math.max(0, dmgToOpp - oppCh.ultimate.mod.reduceIncoming);
+      }
+      if (opp.drNext>0){ dmgToOpp = Math.max(0, dmgToOpp - opp.drNext); }
+    }
+
+    var lethal = dmgToOpp>0 && dmgToOpp >= opp.hp;
+    var selfDeadly = (self.hp - e.selfDmg) <= 0;
+
+    var value = dmgToOpp - e.selfDmg*1.1 + e.selfHeal*0.6 + reversedHeal*0.6;
+    if (lethal) value += 60;
+    if (selfDeadly && !lethal) value -= 200;
+    if (e.setOppDiceLock || e.setOppCoinLock || e.setOppUltLock) value += 1.6;
+    if (e.setOppNoHeal) value += 1.2;
+    if (e.setSelfDR) value += e.setSelfDR * 0.5;
+    if (e.setSelfNextDmgBonus) value += e.setSelfNextDmgBonus * 0.4;
+
+    return {value:value, lethal:lethal};
+  }
+
+  function averageEV(ch, method, self, opp){
+    var outcomes = method==='coin' ? [ch.coin.H, ch.coin.T] : [ch.dice[1],ch.dice[2],ch.dice[3],ch.dice[4],ch.dice[5],ch.dice[6]];
+    var total = 0, allLethal = true;
+    outcomes.forEach(function(eff){
+      var r = evaluateEffect(eff, method, self, opp);
+      total += r.value;
+      if (!r.lethal) allLethal = false;
+    });
+    return {ev: total/outcomes.length, guaranteedLethal: allLethal};
+  }
+
+  function decideNPCAction(self, opp){
+    var ch = charById(self.charId);
+    var options = [];
+    if (!self.coinLockNext){ var c = averageEV(ch,'coin',self,opp); options.push({method:'coin', ev:c.ev, guaranteedLethal:c.guaranteedLethal}); }
+    if (!self.diceLockNext){ var d = averageEV(ch,'dice',self,opp); options.push({method:'dice', ev:d.ev, guaranteedLethal:d.guaranteedLethal}); }
+
+    if (ch.ultimate.type==='active' && !self.ultimateUsed && !self.ultLockNext){
+      var kind = ch.ultimate.kind;
+      if (kind==='tripleGamble'){
+        if (self.hp <= (ch.ultimate.gateHp||2)){
+          var bestNormal = options.reduce(function(a,b){ return b.ev>a.ev?b:a; }, {ev:-Infinity, guaranteedLethal:false});
+          if (!bestNormal.guaranteedLethal){ options.push({method:'ultimate', ev:9999, guaranteedLethal:false}); }
+        }
+      } else if (kind==='reverseTrap'){
+        var bestNormalEv = options.reduce(function(a,b){ return b.ev>a.ev?b:a; }, {ev:-Infinity}).ev;
+        if (bestNormalEv < 3.5){ options.push({method:'ultimate', ev:3.6, guaranteedLethal:false}); }
+      } else {
+        var urBonus = ch.ultimate.bonus||0;
+        var uEff;
+        if (ch.ultimate.isDoubleDice){ uEff = {oppDmg: 7+urBonus}; }
+        else { uEff = cloneEffect(ch.ultimate.effect); if (urBonus && uEff.oppDmg>0) uEff.oppDmg += urBonus; }
+        var r = evaluateEffect(uEff, 'ultimate', self, opp);
+        options.push({method:'ultimate', ev:r.value, guaranteedLethal:r.lethal});
+      }
+    }
+
+    if (!options.length) return self.coinLockNext ? 'dice' : 'coin';
+    var lethalOptions = options.filter(function(o){ return o.guaranteedLethal; });
+    var pool = lethalOptions.length ? lethalOptions : options;
+    pool.sort(function(a,b){ return b.ev-a.ev; });
+    return pool[0].method;
+  }
+
+  function runNPCTurn(){
+    var actorIdx = state.current;
+    var self = state.players[actorIdx];
+    var opp = state.players[actorIdx===0?1:0];
+    setTimeout(function(){
+      if (state.busy) return;
+      var method = decideNPCAction(self, opp);
+      handleAction(method);
+    }, 1200 + Math.random()*700);
+  }
+
+  function handleAction(method){
+    if (state.busy) return;
+    state.busy = true;
+    clearInterval(state.timerId);
+    setActionButtonsDisabled(true);
+
+    var actorIdx = state.current, oppIdx = actorIdx===0?1:0;
+    var actor = state.players[actorIdx], opp = state.players[oppIdx];
+    var ch = charById(actor.charId);
+
+    if (method==='coin'){
+      playCoinAnim(function(face){
+        var effect = cloneEffect(ch.coin[face]);
+        finishOverlay(function(){ resolveEffect(actor,opp,ch,effect,'coin','🪙 '+(face==='H'?'表':'裏')); });
+      });
+    } else if (method==='dice'){
+      playDiceAnim(function(n){
+        var effect = cloneEffect(ch.dice[n]);
+        finishOverlay(function(){ resolveEffect(actor,opp,ch,effect,'dice','🎲 '+n); });
+      });
+    } else if (method==='ultimate'){
+      actor.ultimateUsed = true;
+      var urBonus = ch.ultimate.bonus || 0;
+      if (ch.ultimate.kind==='tripleGamble'){
+        playUltimateFlash(function(){
+          flipThreeCoins(function(results){
+            $('resolve-overlay').classList.remove('active');
+            var allHeads = results.every(function(r){ return r==='H'; });
+            var faces = results.map(function(t){ return t==='H'?'表':'裏'; }).join('/');
+            var line = '<b>'+ch.name+'</b>　✨ 奥義　コイン×3：'+faces;
+            if (allHeads){
+              opp.hp = actor.hp;
+              line += '　→ 全て表！相手のHPを自分と同じ'+actor.hp+'にした！もう1度行動できる！';
+              pushLog(line, 'dmg');
+              renderBattle();
+              lungeCard(actorIdx);
+              if (opp.hp<=0){ setTimeout(function(){ endGame(actor); }, 700); return; }
+              setTimeout(function(){ state.busy=false; renderBattle(); beginTurn(); }, 500);
+            } else {
+              line += '　→ 逆転ならず…';
+              pushLog(line, '');
+              renderBattle();
+              lungeCard(actorIdx);
+              state.current = oppIdx;
+              setTimeout(function(){ state.busy=false; renderBattle(); beginTurn(); }, 500);
+            }
+          });
+        });
+      } else if (ch.ultimate.kind==='reverseTrap'){
+        playUltimateFlash(function(){
+          $('resolve-overlay').classList.remove('active');
+          opp.reverseNext = true;
+          pushLog('<b>'+ch.name+'</b>　✨ 奥義　相手に反転の罠を仕掛けた！次の相手の回復は自傷に、与えるダメージは相手自身の回復に変わる。', '');
+          renderBattle();
+          lungeCard(actorIdx);
+          state.current = oppIdx;
+          setTimeout(function(){ state.busy=false; renderBattle(); beginTurn(); }, 500);
+        });
+      } else if (ch.ultimate.isDoubleDice){
+        playUltimateFlash(function(){
+          playDiceAnim(function(n1){
+            playDiceAnim(function(n2){
+              var sum = n1+n2+urBonus;
+              var effect = {oppDmg:sum, text:'ダイス'+n1+'＋'+n2+(urBonus?'＋'+urBonus+'(改)':'')+'＝合計'+sum+'ダメージ！'};
+              finishOverlay(function(){ resolveEffect(actor,opp,ch,effect,'ultimate','✨ 奥義'); });
+            });
+          });
+        });
+      } else {
+        playUltimateFlash(function(){
+          var effect = cloneEffect(ch.ultimate.effect);
+          if (urBonus && effect.oppDmg>0){ effect.oppDmg += urBonus; }
+          finishOverlay(function(){ resolveEffect(actor,opp,ch,effect,'ultimate','✨ 奥義'); });
+        });
+      }
+    }
+  }
+
+  function flipThreeCoins(cb){
+    var results = [];
+    function next(){
+      if (results.length>=3){ cb(results); return; }
+      playCoinAnim(function(face){ results.push(face); next(); });
+    }
+    next();
+  }
+
+  function finishOverlay(cb){
+    var ov = $('resolve-overlay');
+    setTimeout(function(){ ov.classList.remove('active'); cb(); }, 550);
+  }
+
+  function playCoinAnim(cb){
+    var ov = $('resolve-overlay');
+    ov.classList.add('active');
+    $('resolve-label').textContent = 'コイントス中…';
+    var face = Math.random()<0.5 ? 'H' : 'T';
+    var spinClass = face==='H' ? 'spin-heads' : 'spin-tails';
+    $('resolve-visual').innerHTML = '<div class="coin3d" style="width:76px;height:76px;"><div class="coin3d-inner '+spinClass+'" style="width:100%;height:100%;"><div class="coin-face front"><img src="assets/coin-heads.webp" alt="表"></div><div class="coin-face back"><img src="assets/coin-tails.webp" alt="裏"></div></div></div>';
+    setTimeout(function(){
+      $('resolve-label').textContent = (face==='H' ? '表 が出た！' : '裏 が出た！');
+      setTimeout(function(){ cb(face); }, 500);
+    }, 1300);
+  }
+
+  function renderDieFace(n){
+    var cells = [];
+    for (var r=1;r<=3;r++){ for (var c=1;c<=3;c++){ cells.push([r,c]); } }
+    var pipsSet = {};
+    (PIP_LAYOUTS[n]||[]).forEach(function(rc){ pipsSet[rc[0]+'-'+rc[1]] = true; });
+    var html = '';
+    cells.forEach(function(rc){
+      var key = rc[0]+'-'+rc[1];
+      html += pipsSet[key] ? '<div class="pip"></div>' : '<div></div>';
+    });
+    return html;
+  }
+
+  function playDiceAnim(cb){
+    var ov = $('resolve-overlay');
+    ov.classList.add('active');
+    $('resolve-label').textContent = 'ダイスを振っています…';
+    var vis = $('resolve-visual');
+    vis.innerHTML = '<div class="die3d rolling" id="live-die">'+renderDieFace(1)+'</div>';
+    var dieEl = $('live-die');
+    var rollIv = setInterval(function(){
+      dieEl.innerHTML = renderDieFace(1+Math.floor(Math.random()*6));
+    }, 90);
+    setTimeout(function(){
+      clearInterval(rollIv);
+      var n = 1+Math.floor(Math.random()*6);
+      dieEl.innerHTML = renderDieFace(n);
+      dieEl.classList.remove('rolling');
+      dieEl.classList.add('landed');
+      $('resolve-label').textContent = n + ' の目！';
+      setTimeout(function(){ cb(n); }, 500);
+    }, 750);
+  }
+
+  function playUltimateFlash(cb){
+    var ov = $('resolve-overlay');
+    ov.classList.add('active');
+    $('resolve-visual').innerHTML = '<img src="assets/icon-btn-ultimate.webp" alt="" class="ult-flash-icon">';
+    $('resolve-label').textContent = '奥義発動！';
+    setTimeout(cb, 700);
+  }
+
+  function resolveEffect(actor, opp, ch, effect, method, rollLabel){
+    effect.oppDmg = effect.oppDmg||0; effect.selfDmg = effect.selfDmg||0; effect.selfHeal = effect.selfHeal||0;
+    var notes = [];
+
+    if (actor.dmgBonusNext && effect.oppDmg>0){ effect.oppDmg += actor.dmgBonusNext; notes.push('前ターンの仕込みで+'+actor.dmgBonusNext); }
+    actor.dmgBonusNext = 0;
+
+    if (ch.ultimate.type==='passive' && actor.hp <= ch.ultimate.threshold && actor.hp>0){
+      var m = ch.ultimate.mod || {};
+      if (m.healBonus && effect.selfHeal>0){ effect.selfHeal += m.healBonus; notes.push('奥義発動：回復+'+m.healBonus); }
+      if (m.diceBonus && method==='dice' && effect.oppDmg>0){ effect.oppDmg += m.diceBonus; notes.push('奥義発動：ダイス威力+'+m.diceBonus); }
+      if (m.coinBonus && method==='coin' && effect.oppDmg>0){ effect.oppDmg += m.coinBonus; notes.push('奥義発動：コイン威力+'+m.coinBonus); }
+      if (m.allBonus && effect.oppDmg>0){ effect.oppDmg += m.allBonus; notes.push('奥義発動：与ダメ+'+m.allBonus); }
+    }
+
+    if (actor.noHealNext && effect.selfHeal>0){ notes.push('回復不可のため回復できなかった'); effect.selfHeal = 0; }
+    actor.noHealNext = false;
+    actor.diceLockNext = false;
+    actor.coinLockNext = false;
+    actor.ultLockNext = false;
+
+    var reverseHeal = 0;
+    if (actor.reverseNext){
+      if (effect.selfHeal>0){ effect.selfDmg = (effect.selfDmg||0) + effect.selfHeal; effect.selfHeal = 0; notes.push('反転の罠：回復が自傷に！'); }
+      if (effect.oppDmg>0){ reverseHeal = effect.oppDmg; effect.oppDmg = 0; notes.push('反転の罠：与えるはずのダメージが相手の回復に！'); }
+      actor.reverseNext = false;
+    }
+
+    var dmgToOpp = effect.oppDmg;
+    if (dmgToOpp>0){
+      var oppCh = charById(opp.charId);
+      if (oppCh.ultimate.type==='passive' && opp.hp <= oppCh.ultimate.threshold && opp.hp>0 && oppCh.ultimate.mod && oppCh.ultimate.mod.reduceIncoming){
+        var ri = oppCh.ultimate.mod.reduceIncoming;
+        dmgToOpp = Math.max(0, dmgToOpp-ri); notes.push('相手の奥義発動：受けダメージ-'+ri);
+      }
+      if (opp.drNext>0){
+        var reduced = Math.min(opp.drNext, dmgToOpp);
+        dmgToOpp = Math.max(0, dmgToOpp - opp.drNext);
+        if (reduced>0) notes.push('相手の防御効果でダメージ-'+reduced);
+      }
+    }
+    opp.drNext = 0;
+
+    state.matchStats.turns++;
+    if (dmgToOpp > state.matchStats.maxHit){ state.matchStats.maxHit = dmgToOpp; }
+
+    opp.hp = Math.max(0, opp.hp - dmgToOpp);
+    if (reverseHeal>0){ opp.hp = Math.min(opp.maxHp, opp.hp + reverseHeal); }
+    actor.hp = Math.max(0, actor.hp - effect.selfDmg);
+    if (effect.selfHeal>0){ actor.hp = Math.min(actor.maxHp, actor.hp + effect.selfHeal); }
+
+    // 不屈型：致死ダメージを受けた瞬間、1度だけ生存判定（相手ダメージ・自傷どちらでも判定する）
+    function checkDeathSave(p){
+      if (p.hp>0) return;
+      var pCh = charById(p.charId);
+      if (pCh.ultimate.type==='trigger' && pCh.ultimate.kind==='deathSave' && !p.ultimateUsed){
+        p.ultimateUsed = true;
+        var saveRoll = 1 + Math.floor(Math.random()*6);
+        var saveHp = pCh.ultimate.saveHp || 5;
+        if (saveRoll>=5){
+          p.hp = saveHp;
+          notes.push(pCh.name+'の「不屈」発動！ダイス'+saveRoll+'→HP'+saveHp+'で踏みとどまった！');
+        } else {
+          notes.push(pCh.name+'の「不屈」発動するも、ダイス'+saveRoll+'で力及ばず…');
+        }
+      }
+    }
+    checkDeathSave(opp);
+    checkDeathSave(actor);
+
+    if (effect.setSelfDR){ actor.drNext = effect.setSelfDR; }
+    if (effect.setOppNoHeal){ opp.noHealNext = true; }
+    if (effect.setSelfNextDmgBonus){ actor.dmgBonusNext = effect.setSelfNextDmgBonus; }
+    if (effect.setOppDiceLock){ opp.diceLockNext = true; }
+    if (effect.setOppCoinLock){ opp.coinLockNext = true; }
+    if (effect.setOppUltLock){ opp.ultLockNext = true; }
+
+    var kind = dmgToOpp>0 ? 'dmg' : (effect.selfHeal>0 ? 'heal' : '');
+    var line = '<b>'+ch.name+'</b>　'+rollLabel+'　'+(effect.text||'');
+    if (notes.length) line += '（'+notes.join('／')+'）';
+    pushLog(line, kind);
+
+    var actorIdx = actor===state.players[0] ? 0 : 1;
+    var oppIdx = actorIdx===0 ? 1 : 0;
+
+    renderBattle();
+
+    lungeCard(actorIdx);
+    if (dmgToOpp>0){ floatNumber(oppIdx, '-'+dmgToOpp, 'var(--danger)'); shakeCard(oppIdx); }
+    if (effect.selfDmg>0){ floatNumber(actorIdx, '-'+effect.selfDmg, 'var(--danger)'); shakeCard(actorIdx); }
+    if (effect.selfHeal>0){ floatNumber(actorIdx, '+'+effect.selfHeal, 'var(--heal)'); }
+
+    if (opp.hp<=0){ setTimeout(function(){ endGame(actor); }, 700); return; }
+    if (actor.hp<=0){ setTimeout(function(){ endGame(opp); }, 700); return; }
+
+    state.current = actorIdx===0 ? 1 : 0;
+    setTimeout(function(){ state.busy=false; renderBattle(); beginTurn(); }, 500);
+  }
+
+  function pushLog(html, kind){
+    var log = $('battle-log');
+    var div = document.createElement('div');
+    div.className = 'entry'+(kind?' '+kind:'');
+    div.innerHTML = html.replace(/(-?\+?\d+)ダメージ/g,'<b class="num">$1</b>ダメージ').replace(/(\+\d+)回復/g,'<b class="num">$1</b>回復');
+    log.prepend(div);
+    while (log.children.length>10){ log.removeChild(log.lastChild); }
+  }
+
+  function floatNumber(playerIdx, text, color){
+    var track = $('hptrack-'+playerIdx);
+    if (!track) return;
+    track.style.position = 'relative';
+    var el = document.createElement('div');
+    el.className = 'float-num'; el.style.color = color; el.textContent = text;
+    track.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 1000);
+  }
+  function shakeCard(playerIdx){
+    var card = document.querySelectorAll('#battle-stage .vfx-card')[playerIdx];
+    if (!card) return;
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+  }
+  function lungeCard(playerIdx){
+    var card = document.querySelectorAll('#battle-stage .vfx-card')[playerIdx];
+    if (!card) return;
+    var dirClass = playerIdx===0 ? 'lunge-right' : 'lunge-left';
+    card.classList.remove('lunge-right','lunge-left'); void card.offsetWidth; card.classList.add(dirClass);
+  }
+
+  function endGame(winner){
+    clearInterval(state.timerId);
+    var pClass = winner.label==='P1' ? 'p1' : 'p2';
+    var ch = charById(winner.charId);
+    var el = $('winner-name');
+    el.className = 'winner-name '+pClass;
+    el.textContent = winner.label+'　'+ch.name+'　の勝利！';
+    $('result-title').textContent = 'VICTORY';
+
+    var elapsedSec = Math.max(0, Math.round((Date.now() - state.matchStats.startTime)/1000));
+    var mm = String(Math.floor(elapsedSec/60)).padStart(2,'0');
+    var ss = String(elapsedSec%60).padStart(2,'0');
+    $('stat-time').textContent = mm+':'+ss;
+    $('stat-maxhit').textContent = state.matchStats.maxHit;
+    $('stat-turns').textContent = state.matchStats.turns;
+
+    state.screenIsBattle = false;
+    goto('screen-result');
+  }
+
+  $('btn-restart').addEventListener('click', function(){
+    $('room-code-display').textContent = '----';
+    $('btn-create-room').disabled = false;
+    hide('wait-status'); hide('joined-banner');
+    $('join-code-input').value = '';
+    goto('screen-title');
+  });
+
+})();
+</script>
