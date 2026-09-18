@@ -1,4 +1,8 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Battle Of Joy</title>
 <link rel="preload" as="image" href="assets/arena-bg.jpg">
 <link rel="preload" as="image" href="assets/coin.jpg">
@@ -326,11 +330,11 @@
   .ko-note{text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;}
 
   /* ---------- effect modal ---------- */
-  .modal-scrim{position:fixed; inset:0; background:#000000aa; z-index:40; display:none; align-items:flex-end; justify-content:center;}
+  .modal-scrim{position:fixed; inset:0; background:#000000aa; z-index:40; display:none; align-items:center; justify-content:center; padding:20px;}
   .modal-scrim.open{display:flex; animation:fadein .2s ease both;}
   .modal-sheet{
-    width:100%; max-width:430px; max-height:78vh; overflow-y:auto; background:var(--surface); border:1px solid var(--border);
-    border-radius:20px 20px 0 0; padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));
+    width:100%; max-width:400px; max-height:80vh; overflow-y:auto; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:16px;
     display:flex; flex-direction:column; gap:12px;
     scrollbar-width:none; -ms-overflow-style:none;
   }
@@ -382,6 +386,8 @@
 
   [hidden]{display:none!important;}
 </style>
+</head>
+<body>
 
 <div class="phone">
 
@@ -1463,3 +1469,5 @@
 
 })();
 </script>
+</body>
+</html>
