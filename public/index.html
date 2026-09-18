@@ -238,12 +238,13 @@
   .vfx-card.p2 .vfx-hpfill{background:linear-gradient(90deg,var(--p2),#ffbf9c);}
 
   .rar-sr .vfx-window, .rar-ur .vfx-window{ left:14.5%; top:22.2%; right:14.5%; bottom:24.2%; }
-  .rar-sr .vfx-arche, .rar-ur .vfx-arche{ left:26%; top:11%; right:26%; height:8%; font-size:4.6cqw; }
+  .rar-sr .vfx-arche, .rar-ur .vfx-arche{ left:26%; top:8%; right:26%; height:8%; font-size:4.6cqw; }
   .rar-sr .vfx-cname, .rar-ur .vfx-cname{ left:15%; top:76.5%; right:15%; height:7%; font-size:6cqw; }
   .rar-sr .vfx-hpzone, .rar-ur .vfx-hpzone{ left:16%; top:84%; right:16%; height:6.5%; }
+  .rar-ur .vfx-arche{ color:#fff; text-shadow:0 1px 3px #00000090; }
 
   .rar-lr .vfx-window{ left:22.9%; top:22.1%; right:22.9%; bottom:30.8%; }
-  .rar-lr .vfx-arche{ left:20%; top:1%; right:20%; height:11%; font-size:4.2cqw; }
+  .rar-lr .vfx-arche{ left:20%; top:7%; right:20%; height:8%; font-size:4.2cqw; color:#fff; text-shadow:0 1px 3px #00000090; }
   .rar-lr .vfx-cname{ left:18%; top:74.5%; right:18%; height:6.5%; font-size:5.6cqw; }
   .rar-lr .vfx-hpzone{ left:19%; top:82%; right:19%; height:6%; }
 
@@ -1191,12 +1192,28 @@
   function onNetSync(msg){
     if (Net.role !== 'guest') return;
     $('resolve-overlay').classList.remove('active');
+    var prevPlayers = state.players;
+    var prevLogHTML = $('battle-log').innerHTML;
+    var actorIdx = state.current;
     state.players = msg.players;
     state.current = msg.current;
     state.matchStats = msg.matchStats;
     state.busy = false;
     renderBattle();
     $('battle-log').innerHTML = msg.logHTML;
+
+    // Mirror the host's attack feedback (lunge/shake/float numbers) using the
+    // HP deltas between the previous and new snapshot; a real action is the
+    // only thing that changes the log, so use that to skip the initial
+    // battle-start sync (where nothing actually happened yet).
+    if (msg.logHTML !== prevLogHTML && prevPlayers[0] && prevPlayers[1]){
+      lungeCard(actorIdx);
+      for (var i=0;i<2;i++){
+        var delta = state.players[i].hp - prevPlayers[i].hp;
+        if (delta < 0){ floatNumber(i, ''+delta, 'var(--danger)'); shakeCard(i); }
+        else if (delta > 0){ floatNumber(i, '+'+delta, 'var(--heal)'); }
+      }
+    }
   }
   function onNetTimerTick(msg){
     if (Net.role !== 'guest') return;
@@ -1543,13 +1560,13 @@
     var vis = $('resolve-visual');
     vis.innerHTML = '<div class="die3d rolling" id="live-die">'+renderDieFace(1)+'</div>';
     var dieEl = $('live-die');
+    var n = forcedN || (1+Math.floor(Math.random()*6));
+    if (!forcedN && state.online && Net.role==='host'){ Net.send({type:'anim', kind:'dice', n:n}); }
     var rollIv = setInterval(function(){
       dieEl.innerHTML = renderDieFace(1+Math.floor(Math.random()*6));
     }, 90);
     setTimeout(function(){
       clearInterval(rollIv);
-      var n = forcedN || (1+Math.floor(Math.random()*6));
-      if (!forcedN && state.online && Net.role==='host'){ Net.send({type:'anim', kind:'dice', n:n}); }
       dieEl.innerHTML = renderDieFace(n);
       dieEl.classList.remove('rolling');
       dieEl.classList.add('landed');
