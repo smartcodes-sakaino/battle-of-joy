@@ -744,7 +744,59 @@
     timerId:null,
     busy:false,
     vsNPC:false,
+    online:false,
+    myIdx:0,
+    roomCode:null,
     matchStats:{startTime:0, turns:0, maxHit:0}
+  };
+
+  // ---------- Online relay (WebSocket via Cloudflare Durable Object) ----------
+  var Net = {
+    ws:null,
+    role:null, // 'host' | 'guest'
+    connect:function(code, role, onOpen, onError){
+      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      var url = proto + '//' + location.host + '/room/' + code + '?role=' + role;
+      var ws;
+      try { ws = new WebSocket(url); } catch(e){ if (onError) onError(e); return; }
+      Net.ws = ws;
+      Net.role = role;
+      var opened = false;
+      ws.addEventListener('open', function(){ opened = true; if (onOpen) onOpen(); });
+      ws.addEventListener('error', function(e){ if (!opened && onError) onError(e); });
+      ws.addEventListener('close', function(){ if (opened) Net.onDisconnect(); Net.ws = null; });
+      ws.addEventListener('message', function(evt){
+        var msg;
+        try { msg = JSON.parse(evt.data); } catch(e){ return; }
+        Net.handleMessage(msg);
+      });
+    },
+    send:function(msg){
+      if (Net.ws && Net.ws.readyState===1){ Net.ws.send(JSON.stringify(msg)); }
+    },
+    disconnect:function(){
+      if (Net.ws){ try{ Net.ws.close(); }catch(e){} }
+      Net.ws = null; Net.role = null;
+    },
+    onDisconnect:function(){
+      if (!state.online) return;
+      onPeerLeft();
+    },
+    handleMessage:function(msg){
+      switch(msg.type){
+        case 'peerJoined': onPeerJoined(); break;
+        case 'peerLeft': onPeerLeft(); break;
+        case 'draw': onNetDraw(msg); break;
+        case 'ready': onNetReady(msg); break;
+        case 'coinToss': onNetCoinToss(msg); break;
+        case 'action': onNetActionRequest(msg); break;
+        case 'anim': onNetAnim(msg); break;
+        case 'ultFlash': onNetUltFlash(); break;
+        case 'sync': onNetSync(msg); break;
+        case 'timerTick': onNetTimerTick(msg); break;
+        case 'gameOver': onNetGameOver(msg); break;
+      }
+    }
   };
 
   // ---------- Rules page ----------
@@ -790,34 +842,90 @@
 
   // ---------- Title / Room ----------
   $('btn-to-room').addEventListener('click', function(){ state.vsNPC = false; goto('screen-room'); });
-  $('btn-back-title').addEventListener('click', function(){ goto('screen-title'); });
+  $('btn-back-title').addEventListener('click', function(){
+    if (state.online){ Net.disconnect(); state.online = false; }
+    hide('wait-status'); hide('joined-banner');
+    $('btn-create-room').disabled = false;
+    $('btn-join-room').disabled = false;
+    goto('screen-title');
+  });
   $('tab-create').addEventListener('click', function(){ $('tab-create').classList.add('active'); $('tab-join').classList.remove('active'); show('pane-create'); hide('pane-join'); });
   $('tab-join').addEventListener('click', function(){ $('tab-join').classList.add('active'); $('tab-create').classList.remove('active'); show('pane-join'); hide('pane-create'); });
 
   $('btn-create-room').addEventListener('click', function(){
-    var code = String(Math.floor(1000 + Math.random()*9000));
-    $('room-code-display').textContent = code;
-    this.disabled = true;
-    show('wait-status');
-    setTimeout(function(){ hide('wait-status'); show('joined-banner'); setTimeout(startMatch,900); }, 2200);
+    var btn = this;
+    btn.disabled = true;
+    hide('joined-banner');
+    tryCreateRoom(0);
+    function tryCreateRoom(attempt){
+      var code = String(Math.floor(1000 + Math.random()*9000));
+      $('room-code-display').textContent = code;
+      show('wait-status'); $('wait-status').innerHTML = '対戦相手の入室を待っています<span class="dots"></span>';
+      Net.connect(code, 'host', function(){
+        state.online = true; state.myIdx = 0; state.roomCode = code; Net.role = 'host';
+      }, function(){
+        Net.disconnect();
+        if (attempt < 3){ tryCreateRoom(attempt+1); }
+        else { hide('wait-status'); btn.disabled = false; toast('ルーム作成に失敗しました。もう一度お試しください'); }
+      });
+    }
   });
   $('join-code-input').addEventListener('input', function(e){ e.target.value = e.target.value.replace(/[^0-9]/g,'').slice(0,4); });
   $('btn-join-room').addEventListener('click', function(){
-    if ($('join-code-input').value.length !== 4){ toast('4桁のルーム番号を入力してください'); return; }
-    startMatch();
+    var code = $('join-code-input').value;
+    if (code.length !== 4){ toast('4桁のルーム番号を入力してください'); return; }
+    var btn = this;
+    btn.disabled = true;
+    Net.connect(code, 'guest', function(){
+      state.online = true; state.myIdx = 1; state.roomCode = code; Net.role = 'guest';
+      toast('ホストに接続しました。開始をお待ちください');
+    }, function(){
+      btn.disabled = false;
+      toast('入室に失敗しました。ルーム番号を確認してください');
+    });
   });
 
+  function onPeerJoined(){
+    if (Net.role !== 'host') return;
+    hide('wait-status'); show('joined-banner');
+    setTimeout(function(){
+      var first = Math.random() < 0.5 ? 0 : 1;
+      Net.send({type:'coinToss', first:first});
+      runCoinTossSequence(first);
+    }, 900);
+  }
+  function onNetCoinToss(msg){
+    if (Net.role !== 'guest') return;
+    runCoinTossSequence(msg.first);
+  }
+  function onPeerLeft(){
+    if (!state.online) return;
+    clearInterval(state.timerId);
+    clearInterval(state.prepTimerId);
+    Net.disconnect();
+    state.online = false;
+    toast('対戦相手との接続が切れました');
+    goto('screen-title');
+  }
+
   function startMatch(){
+    runCoinTossSequence(Math.random() < 0.5 ? 0 : 1);
+  }
+
+  function runCoinTossSequence(first){
     goto('screen-cointoss');
     var inner = $('coin3d-inner');
     inner.classList.remove('spinning'); void inner.offsetWidth; inner.classList.add('spinning');
     $('toss-result-text').innerHTML = '&nbsp;';
     setTimeout(function(){
-      var first = Math.random() < 0.5 ? 0 : 1;
       state.current = first;
       var lbl = first===0 ? 'P1' : (state.vsNPC ? 'NPC' : 'P2'), cls = first===0 ? 'p1' : 'p2';
       $('toss-result-text').innerHTML = '<span class="name '+cls+'">'+lbl+'</span> が先攻です！';
-      setTimeout(startPrep, 1100);
+      setTimeout(function(){
+        if (state.online && Net.role==='host'){ hostStartPrep(); }
+        else if (state.online && Net.role==='guest'){ /* wait for 'draw' message from host */ }
+        else { startPrep(); }
+      }, 1100);
     }, 1550);
   }
 
@@ -840,19 +948,44 @@
   }
 
   function startPrep(){
-    state.busy = false;
     var pick0 = drawCharacter(null);
     var pick1 = drawCharacter(pick0.id);
-    state.players[0] = {label:'P1', charId:pick0.id, hp:pick0.maxHp, maxHp:pick0.maxHp, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false};
-    state.players[1] = {label:state.vsNPC?'NPC':'P2', charId:pick1.id, hp:pick1.maxHp, maxHp:pick1.maxHp, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false};
+    applyDraw(pick0.id, pick1.id);
+  }
+
+  function hostStartPrep(){
+    var pick0 = drawCharacter(null);
+    var pick1 = drawCharacter(pick0.id);
+    Net.send({type:'draw', p0:pick0.id, p1:pick1.id});
+    applyDraw(pick0.id, pick1.id);
+  }
+  function onNetDraw(msg){
+    if (Net.role !== 'guest') return;
+    applyDraw(msg.p0, msg.p1);
+  }
+
+  function applyDraw(id0, id1){
+    state.busy = false;
+    var ch0 = charById(id0), ch1 = charById(id1);
+    state.players[0] = {label:'P1', charId:id0, hp:ch0.maxHp, maxHp:ch0.maxHp, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false};
+    state.players[1] = {label:state.vsNPC?'NPC':'P2', charId:id1, hp:ch1.maxHp, maxHp:ch1.maxHp, ultimateUsed:false, drNext:0, noHealNext:false, dmgBonusNext:0, diceLockNext:false, coinLockNext:false, reverseNext:false, ready:false};
 
     goto('screen-prep');
-    $('btn-ready-0').classList.remove('ready'); $('btn-ready-0').disabled = false;
-    $('btn-ready-0').innerHTML = 'P1 準備OK<small>タップで準備完了</small>';
     if (state.vsNPC){
+      $('btn-ready-0').classList.remove('ready'); $('btn-ready-0').disabled = false;
+      $('btn-ready-0').innerHTML = 'P1 準備OK<small>タップで準備完了</small>';
       tryReady(1);
       $('btn-ready-1').innerHTML = '🤖 NPC 準備完了';
+    } else if (state.online){
+      var myIdx = state.myIdx, theirIdx = myIdx===0?1:0;
+      var myLbl = myIdx===0?'P1':'P2', theirLbl = theirIdx===0?'P1':'P2';
+      $('btn-ready-'+myIdx).classList.remove('ready'); $('btn-ready-'+myIdx).disabled = false;
+      $('btn-ready-'+myIdx).innerHTML = myLbl+' 準備OK<small>タップで準備完了</small>';
+      $('btn-ready-'+theirIdx).classList.remove('ready'); $('btn-ready-'+theirIdx).disabled = true;
+      $('btn-ready-'+theirIdx).innerHTML = theirLbl+'<small>準備を待っています…</small>';
     } else {
+      $('btn-ready-0').classList.remove('ready'); $('btn-ready-0').disabled = false;
+      $('btn-ready-0').innerHTML = 'P1 準備OK<small>タップで準備完了</small>';
       $('btn-ready-1').classList.remove('ready'); $('btn-ready-1').disabled = false;
       $('btn-ready-1').innerHTML = 'P2 準備OK<small>タップで準備完了</small>';
     }
@@ -878,13 +1011,18 @@
     b.classList.add('ready');
     b.innerHTML = '準備完了 ✓';
     b.disabled = true;
+    if (state.online && idx === state.myIdx){ Net.send({type:'ready', idx:idx}); }
     if (state.players[0].ready && state.players[1].ready){
       clearInterval(state.prepTimerId);
       goToBattle();
     }
   }
-  $('btn-ready-0').addEventListener('click', function(){ tryReady(0); });
-  $('btn-ready-1').addEventListener('click', function(){ tryReady(1); });
+  function onNetReady(msg){
+    if (!state.online) return;
+    tryReady(msg.idx);
+  }
+  $('btn-ready-0').addEventListener('click', function(){ if (state.online && state.myIdx!==0) return; tryReady(0); });
+  $('btn-ready-1').addEventListener('click', function(){ if (state.online && state.myIdx!==1) return; tryReady(1); });
 
   function goToBattle(){
     state.busy = false;
@@ -998,6 +1136,30 @@
     bindCardPress(stage);
 
     renderActionBar();
+
+    if (state.online && Net.role==='host'){ broadcastSync(); }
+  }
+
+  function broadcastSync(){
+    Net.send({type:'sync', players:state.players, current:state.current, matchStats:state.matchStats, logHTML:$('battle-log').innerHTML});
+  }
+  function onNetSync(msg){
+    if (Net.role !== 'guest') return;
+    state.players = msg.players;
+    state.current = msg.current;
+    state.matchStats = msg.matchStats;
+    state.busy = false;
+    renderBattle();
+    $('battle-log').innerHTML = msg.logHTML;
+  }
+  function onNetTimerTick(msg){
+    if (Net.role !== 'guest') return;
+    state.timer = msg.seconds;
+    updateTimerUI();
+  }
+  function onNetGameOver(msg){
+    if (Net.role !== 'guest') return;
+    endGame(state.players[msg.winnerIdx]);
   }
 
   function renderActionBar(){
@@ -1009,6 +1171,8 @@
     if (p.hp <= 0){ bar.innerHTML = '<div class="ko-note">対戦終了処理中…</div>'; return; }
 
     if (state.vsNPC && idx===1){ bar.innerHTML = '<div class="ko-note">🤖 NPCが考え中<span class="dots"></span></div>'; return; }
+
+    if (state.online && idx !== state.myIdx){ bar.innerHTML = '<div class="ko-note">相手の行動を待っています<span class="dots"></span></div>'; return; }
 
     var html = '<div class="action-buttons">';
     html += '<button class="btn" data-act="coin" '+(p.coinLockNext?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-coin.webp" alt="">コイン'+(p.coinLockNext?'<small>使用不可</small>':'')+'</button>';
@@ -1022,11 +1186,28 @@
     html += '</div>';
     bar.innerHTML = html;
     bar.querySelectorAll('[data-act]').forEach(function(b){
-      b.addEventListener('click', function(){ if (!state.busy) handleAction(b.getAttribute('data-act')); });
+      b.addEventListener('click', function(){
+        if (state.busy) return;
+        var method = b.getAttribute('data-act');
+        if (state.online && Net.role==='guest'){
+          state.busy = true;
+          setActionButtonsDisabled(true);
+          Net.send({type:'action', method:method});
+        } else {
+          handleAction(method);
+        }
+      });
     });
+  }
+  function onNetActionRequest(msg){
+    if (Net.role !== 'host') return;
+    if (state.busy) return;
+    if (state.current !== 1) return;
+    handleAction(msg.method);
   }
 
   function beginTurn(){
+    if (state.online && Net.role==='guest'){ return; } // host owns the timer/timeout-fallback for both seats
     var p = state.players[state.current];
     if (state.vsNPC && state.current===1 && p.hp>0){
       clearInterval(state.timerId);
@@ -1042,8 +1223,10 @@
     clearInterval(state.timerId);
     state.timer = TURN_SECONDS;
     updateTimerUI();
+    if (state.online && Net.role==='host'){ Net.send({type:'timerTick', seconds:state.timer}); }
     state.timerId = setInterval(function(){
       state.timer--; updateTimerUI();
+      if (state.online && Net.role==='host'){ Net.send({type:'timerTick', seconds:state.timer}); }
       if (state.timer<=0){
         clearInterval(state.timerId);
         var fallback = state.players[state.current].coinLockNext ? 'dice' : 'coin';
@@ -1255,11 +1438,12 @@
     setTimeout(function(){ ov.classList.remove('active'); cb(); }, 550);
   }
 
-  function playCoinAnim(cb){
+  function playCoinAnim(cb, forcedFace){
     var ov = $('resolve-overlay');
     ov.classList.add('active');
     $('resolve-label').textContent = 'コイントス中…';
-    var face = Math.random()<0.5 ? 'H' : 'T';
+    var face = forcedFace || (Math.random()<0.5 ? 'H' : 'T');
+    if (!forcedFace && state.online && Net.role==='host'){ Net.send({type:'anim', kind:'coin', face:face}); }
     var spinClass = face==='H' ? 'spin-heads' : 'spin-tails';
     $('resolve-visual').innerHTML = '<div class="coin3d" style="width:76px;height:76px;"><div class="coin3d-inner '+spinClass+'" style="width:100%;height:100%;"><div class="coin-face front"><img src="assets/coin-heads.webp" alt="表"></div><div class="coin-face back"><img src="assets/coin-tails.webp" alt="裏"></div></div></div>';
     setTimeout(function(){
@@ -1281,7 +1465,7 @@
     return html;
   }
 
-  function playDiceAnim(cb){
+  function playDiceAnim(cb, forcedN){
     var ov = $('resolve-overlay');
     ov.classList.add('active');
     $('resolve-label').textContent = 'ダイスを振っています…';
@@ -1293,7 +1477,8 @@
     }, 90);
     setTimeout(function(){
       clearInterval(rollIv);
-      var n = 1+Math.floor(Math.random()*6);
+      var n = forcedN || (1+Math.floor(Math.random()*6));
+      if (!forcedN && state.online && Net.role==='host'){ Net.send({type:'anim', kind:'dice', n:n}); }
       dieEl.innerHTML = renderDieFace(n);
       dieEl.classList.remove('rolling');
       dieEl.classList.add('landed');
@@ -1302,12 +1487,22 @@
     }, 750);
   }
 
-  function playUltimateFlash(cb){
+  function playUltimateFlash(cb, fromNet){
+    if (!fromNet && state.online && Net.role==='host'){ Net.send({type:'ultFlash'}); }
     var ov = $('resolve-overlay');
     ov.classList.add('active');
     $('resolve-visual').innerHTML = '<img src="assets/icon-btn-ultimate.webp" alt="" class="ult-flash-icon">';
     $('resolve-label').textContent = '奥義発動！';
     setTimeout(cb, 700);
+  }
+  function onNetAnim(msg){
+    if (Net.role !== 'guest') return;
+    if (msg.kind==='coin'){ playCoinAnim(function(){}, msg.face); }
+    else if (msg.kind==='dice'){ playDiceAnim(function(){}, msg.n); }
+  }
+  function onNetUltFlash(){
+    if (Net.role !== 'guest') return;
+    playUltimateFlash(function(){}, true);
   }
 
   function resolveEffect(actor, opp, ch, effect, method, rollLabel){
@@ -1441,6 +1636,9 @@
 
   function endGame(winner){
     clearInterval(state.timerId);
+    if (state.online && Net.role==='host'){
+      Net.send({type:'gameOver', winnerIdx: winner===state.players[0] ? 0 : 1});
+    }
     var pClass = winner.label==='P1' ? 'p1' : 'p2';
     var ch = charById(winner.charId);
     var el = $('winner-name');
@@ -1460,8 +1658,10 @@
   }
 
   $('btn-restart').addEventListener('click', function(){
+    if (state.online){ Net.disconnect(); state.online = false; state.roomCode = null; }
     $('room-code-display').textContent = '----';
     $('btn-create-room').disabled = false;
+    $('btn-join-room').disabled = false;
     hide('wait-status'); hide('joined-banner');
     $('join-code-input').value = '';
     goto('screen-title');
