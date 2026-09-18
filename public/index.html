@@ -694,15 +694,25 @@
     }
     c.ultimate = JSON.parse(JSON.stringify(sr.ultimate));
     if (c.ultimate.type==='passive'){
+      var oldThreshold = c.ultimate.threshold;
       c.ultimate.threshold += 1;
+      c.ultimate.desc = c.ultimate.desc.replace('HPが'+oldThreshold+'以下', 'HPが'+c.ultimate.threshold+'以下');
     } else if (c.ultimate.type==='trigger'){
       c.ultimate.saveHp = (c.ultimate.saveHp||5) + 1;
+      c.ultimate.desc = c.ultimate.desc.replace(/HPが\d+の状態で生き残る/, 'HPが'+c.ultimate.saveHp+'の状態で生き残る');
     } else if (c.ultimate.kind==='tripleGamble'){
-      c.ultimate.gateHp = (c.ultimate.gateHp||2) + 1;
+      var oldGateHp = c.ultimate.gateHp||2;
+      c.ultimate.gateHp = oldGateHp + 1;
+      c.ultimate.desc = c.ultimate.desc.replace('HPが'+oldGateHp+'以下', 'HPが'+c.ultimate.gateHp+'以下');
     } else if (c.ultimate.kind==='reverseTrap'){
       // 数値強化なし。HP+2とダイス5-6+1が改の強化分。
     } else {
       c.ultimate.bonus = (c.ultimate.bonus||0) + 1;
+      if (c.ultimate.effect && c.ultimate.effect.oppDmg>0){
+        var oldDmg = c.ultimate.effect.oppDmg;
+        var newDmg = oldDmg + c.ultimate.bonus;
+        c.ultimate.desc = c.ultimate.desc.replace(oldDmg+'ダメージ', newDmg+'ダメージ');
+      }
     }
     return c;
   }
@@ -1433,7 +1443,11 @@
       } else {
         playUltimateFlash(function(){
           var effect = cloneEffect(ch.ultimate.effect);
-          if (urBonus && effect.oppDmg>0){ effect.oppDmg += urBonus; }
+          if (urBonus && effect.oppDmg>0){
+            var baseDmg = effect.oppDmg;
+            effect.oppDmg += urBonus;
+            if (effect.text){ effect.text = effect.text.replace(baseDmg+'ダメージ', effect.oppDmg+'ダメージ'); }
+          }
           finishOverlay(function(){ resolveEffect(actor,opp,ch,effect,'ultimate','✨ 奥義'); });
         });
       }
@@ -1573,51 +1587,65 @@
     if (effect.selfHeal>0){ actor.hp = Math.min(actor.maxHp, actor.hp + effect.selfHeal); }
 
     // 不屈型：致死ダメージを受けた瞬間、1度だけ生存判定（相手ダメージ・自傷どちらでも判定する）
-    function checkDeathSave(p){
-      if (p.hp>0) return;
+    function needsDeathSave(p){
+      if (p.hp>0) return false;
       var pCh = charById(p.charId);
-      if (pCh.ultimate.type==='trigger' && pCh.ultimate.kind==='deathSave' && !p.ultimateUsed){
-        p.ultimateUsed = true;
-        var saveRoll = 1 + Math.floor(Math.random()*6);
-        var saveHp = pCh.ultimate.saveHp || 5;
-        if (saveRoll>=5){
-          p.hp = saveHp;
-          notes.push(pCh.name+'の「不屈」発動！ダイス'+saveRoll+'→HP'+saveHp+'で踏みとどまった！');
-        } else {
-          notes.push(pCh.name+'の「不屈」発動するも、ダイス'+saveRoll+'で力及ばず…');
-        }
+      return pCh.ultimate.type==='trigger' && pCh.ultimate.kind==='deathSave' && !p.ultimateUsed;
+    }
+    function applyDeathSave(p, saveRoll){
+      var pCh = charById(p.charId);
+      p.ultimateUsed = true;
+      var saveHp = pCh.ultimate.saveHp || 5;
+      if (saveRoll>=5){
+        p.hp = saveHp;
+        notes.push(pCh.name+'の「不屈」発動！ダイス'+saveRoll+'→HP'+saveHp+'で踏みとどまった！');
+      } else {
+        notes.push(pCh.name+'の「不屈」発動するも、ダイス'+saveRoll+'で力及ばず…');
       }
     }
-    checkDeathSave(opp);
-    checkDeathSave(actor);
 
-    if (effect.setSelfDR){ actor.drNext = effect.setSelfDR; }
-    if (effect.setOppNoHeal){ opp.noHealNext = true; }
-    if (effect.setSelfNextDmgBonus){ actor.dmgBonusNext = effect.setSelfNextDmgBonus; }
-    if (effect.setOppDiceLock){ opp.diceLockNext = true; }
-    if (effect.setOppCoinLock){ opp.coinLockNext = true; }
-    if (effect.setOppUltLock){ opp.ultLockNext = true; }
+    function finishResolution(){
+      if (effect.setSelfDR){ actor.drNext = effect.setSelfDR; }
+      if (effect.setOppNoHeal){ opp.noHealNext = true; }
+      if (effect.setSelfNextDmgBonus){ actor.dmgBonusNext = effect.setSelfNextDmgBonus; }
+      if (effect.setOppDiceLock){ opp.diceLockNext = true; }
+      if (effect.setOppCoinLock){ opp.coinLockNext = true; }
+      if (effect.setOppUltLock){ opp.ultLockNext = true; }
 
-    var kind = dmgToOpp>0 ? 'dmg' : (effect.selfHeal>0 ? 'heal' : '');
-    var line = '<b>'+ch.name+'</b>　'+rollLabel+'　'+(effect.text||'');
-    if (notes.length) line += '（'+notes.join('／')+'）';
-    pushLog(line, kind);
+      var kind = dmgToOpp>0 ? 'dmg' : (effect.selfHeal>0 ? 'heal' : '');
+      var line = '<b>'+ch.name+'</b>　'+rollLabel+'　'+(effect.text||'');
+      if (notes.length) line += '（'+notes.join('／')+'）';
+      pushLog(line, kind);
 
-    var actorIdx = actor===state.players[0] ? 0 : 1;
-    var oppIdx = actorIdx===0 ? 1 : 0;
+      var actorIdx = actor===state.players[0] ? 0 : 1;
+      var oppIdx = actorIdx===0 ? 1 : 0;
 
-    renderBattle();
+      renderBattle();
 
-    lungeCard(actorIdx);
-    if (dmgToOpp>0){ floatNumber(oppIdx, '-'+dmgToOpp, 'var(--danger)'); shakeCard(oppIdx); }
-    if (effect.selfDmg>0){ floatNumber(actorIdx, '-'+effect.selfDmg, 'var(--danger)'); shakeCard(actorIdx); }
-    if (effect.selfHeal>0){ floatNumber(actorIdx, '+'+effect.selfHeal, 'var(--heal)'); }
+      lungeCard(actorIdx);
+      if (dmgToOpp>0){ floatNumber(oppIdx, '-'+dmgToOpp, 'var(--danger)'); shakeCard(oppIdx); }
+      if (effect.selfDmg>0){ floatNumber(actorIdx, '-'+effect.selfDmg, 'var(--danger)'); shakeCard(actorIdx); }
+      if (effect.selfHeal>0){ floatNumber(actorIdx, '+'+effect.selfHeal, 'var(--heal)'); }
 
-    if (opp.hp<=0){ setTimeout(function(){ endGame(actor); }, 700); return; }
-    if (actor.hp<=0){ setTimeout(function(){ endGame(opp); }, 700); return; }
+      if (opp.hp<=0){ setTimeout(function(){ endGame(actor); }, 700); return; }
+      if (actor.hp<=0){ setTimeout(function(){ endGame(opp); }, 700); return; }
 
-    state.current = actorIdx===0 ? 1 : 0;
-    setTimeout(function(){ state.busy=false; renderBattle(); beginTurn(); }, 500);
+      state.current = actorIdx===0 ? 1 : 0;
+      setTimeout(function(){ state.busy=false; renderBattle(); beginTurn(); }, 500);
+    }
+
+    function checkActorThenFinish(){
+      if (needsDeathSave(actor)){
+        playDiceAnim(function(n){ finishOverlay(function(){ applyDeathSave(actor, n); finishResolution(); }); });
+      } else {
+        finishResolution();
+      }
+    }
+    if (needsDeathSave(opp)){
+      playDiceAnim(function(n){ finishOverlay(function(){ applyDeathSave(opp, n); checkActorThenFinish(); }); });
+    } else {
+      checkActorThenFinish();
+    }
   }
 
   function pushLog(html, kind){
