@@ -178,6 +178,8 @@
   @keyframes coinspin{0%{transform:rotateY(0);} 100%{transform:rotateY(1800deg);}}
   .coin3d-inner.spin-heads{animation:coinspinH 1.3s cubic-bezier(.2,.6,.3,1) forwards;}
   .coin3d-inner.spin-tails{animation:coinspinT 1.3s cubic-bezier(.2,.6,.3,1) forwards;}
+  .coin3d-inner.toss-heads{animation:coinspinH 1.5s cubic-bezier(.2,.6,.3,1) forwards;}
+  .coin3d-inner.toss-tails{animation:coinspinT 1.5s cubic-bezier(.2,.6,.3,1) forwards;}
   @keyframes coinspinH{0%{transform:rotateY(0);} 100%{transform:rotateY(1800deg);}}
   @keyframes coinspinT{0%{transform:rotateY(0);} 100%{transform:rotateY(1980deg);}}
   .coin-face{position:absolute; inset:0; border-radius:50%; backface-visibility:hidden; overflow:hidden; box-shadow:0 0 0 4px #ffffff22, 0 14px 34px -10px #00000090;}
@@ -915,12 +917,21 @@
   function runCoinTossSequence(first){
     goto('screen-cointoss');
     var inner = $('coin3d-inner');
-    inner.classList.remove('spinning'); void inner.offsetWidth; inner.classList.add('spinning');
+    inner.classList.remove('spinning','toss-heads','toss-tails');
+    void inner.offsetWidth;
+    var iGoFirst = state.online ? (first === state.myIdx) : null;
+    inner.classList.add(state.online ? (iGoFirst ? 'toss-heads' : 'toss-tails') : 'spinning');
     $('toss-result-text').innerHTML = '&nbsp;';
     setTimeout(function(){
       state.current = first;
-      var lbl = first===0 ? 'P1' : (state.vsNPC ? 'NPC' : 'P2'), cls = first===0 ? 'p1' : 'p2';
-      $('toss-result-text').innerHTML = '<span class="name '+cls+'">'+lbl+'</span> が先攻です！';
+      if (state.online){
+        $('toss-result-text').innerHTML = iGoFirst
+          ? 'あなたは<span class="name p1">先攻</span>です！'
+          : 'あなたは<span class="name p2">後攻</span>です！';
+      } else {
+        var lbl = first===0 ? 'P1' : (state.vsNPC ? 'NPC' : 'P2'), cls = first===0 ? 'p1' : 'p2';
+        $('toss-result-text').innerHTML = '<span class="name '+cls+'">'+lbl+'</span> が先攻です！';
+      }
       setTimeout(function(){
         if (state.online && Net.role==='host'){ hostStartPrep(); }
         else if (state.online && Net.role==='guest'){ /* wait for 'draw' message from host */ }
