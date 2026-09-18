@@ -194,10 +194,10 @@
 
   /* ---------- shared VS card (used in prep + arena) ---------- */
   .vs-stage{
-    flex:1; position:relative; display:flex; align-items:center; justify-content:center; gap:10px;
-    padding:14px 14px 6px;
+    flex:1; position:relative; display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:14px 6px 6px;
   }
-  .vfx-sway{flex:1; max-width:150px; aspect-ratio:896/1200; position:relative;}
+  .vfx-sway{flex:1; max-width:180px; aspect-ratio:896/1200; position:relative;}
   .vfx-card{
     width:100%; height:100%; position:relative;
     container-type:inline-size;
@@ -326,19 +326,26 @@
   .logbar .entry.heal b.num{color:var(--heal);}
 
   .actionbar{
-    flex:2 1 0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:6px;
-    padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));
+    flex:2 1 0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:4px;
+    padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));
   }
-  .action-buttons{display:flex; gap:12px; justify-content:center; align-items:stretch; flex:1; min-height:0;}
+  .action-buttons{display:flex; gap:4px; justify-content:center; align-items:stretch; flex:1; min-height:0;}
   .act-btn{
     appearance:none; border:none; background:transparent; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:2px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px;
     flex:1 1 0; min-width:0; min-height:0; transition:transform .12s ease, opacity .15s ease;
   }
   .act-btn:active{transform:scale(.95);}
-  .act-btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .act-btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+  .act-badge-wrap{position:relative; flex:1; min-height:0; width:100%; display:flex; align-items:center; justify-content:center;}
   .act-badge{max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; filter:drop-shadow(0 6px 14px #00000090);}
-  .act-btn small{font-weight:700; font-size:11px; color:var(--text-muted);}
+  .act-badge-dice{transform:scale(1.18);}
+  .act-status{
+    position:absolute; top:-2px; right:2%; z-index:2;
+    background:var(--surface-3); border:1px solid var(--border); border-radius:20px;
+    padding:2px 8px; font-size:9.5px; font-weight:700; color:var(--text-muted); white-space:nowrap;
+  }
+  .act-status.active{background:linear-gradient(135deg,var(--heal),#1fae7c); border-color:transparent; color:#04231a;}
   .ko-note{text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;}
 
   /* ---------- effect modal ---------- */
@@ -941,13 +948,13 @@
     inner.classList.remove('spinning','toss-heads','toss-tails');
     wrap.classList.remove('result-first','result-second');
     void inner.offsetWidth;
-    var iGoFirst = state.online ? (first === state.myIdx) : null;
-    inner.classList.add(state.online ? (iGoFirst ? 'toss-heads' : 'toss-tails') : 'spinning');
+    var iGoFirst = state.online ? (first === state.myIdx) : (first === 0);
+    inner.classList.add(iGoFirst ? 'toss-heads' : 'toss-tails');
     $('toss-result-text').innerHTML = '&nbsp;';
     setTimeout(function(){
       state.current = first;
+      wrap.classList.add(iGoFirst ? 'result-first' : 'result-second');
       if (state.online){
-        wrap.classList.add(iGoFirst ? 'result-first' : 'result-second');
         $('toss-result-text').innerHTML = iGoFirst
           ? '⚡ あなたは<span class="name p1">先攻</span>です！'
           : '🛡 あなたは<span class="name p2">後攻</span>です！';
@@ -1214,14 +1221,35 @@
     if (state.online && idx !== state.myIdx){ bar.innerHTML = '<div class="ko-note">相手の行動を待っています<span class="dots"></span></div>'; return; }
 
     var html = '<div class="action-buttons">';
-    html += '<button class="act-btn" data-act="coin" '+(p.coinLockNext?'disabled':'')+'><img class="act-badge" src="assets/icon-btn-coin.webp" alt="コイン">'+(p.coinLockNext?'<small>使用不可</small>':'')+'</button>';
-    html += '<button class="act-btn" data-act="dice" '+(p.diceLockNext?'disabled':'')+'><img class="act-badge" src="assets/icon-btn-dice.webp" alt="ダイス">'+(p.diceLockNext?'<small>使用不可</small>':'')+'</button>';
-    if (ch.ultimate.type==='active'){
-      var gateOk = !(ch.ultimate.kind==='tripleGamble') || (p.hp <= (ch.ultimate.gateHp||2));
-      var ultDisabled = p.ultimateUsed || p.ultLockNext || !gateOk;
-      var ultSmall = p.ultimateUsed ? '1回限り' : (p.ultLockNext ? '使用不可' : (!gateOk ? 'HP'+(ch.ultimate.gateHp||2)+'以下で使用可' : '1回限り'));
-      html += '<button class="act-btn" data-act="ultimate" '+(ultDisabled?'disabled':'')+'><img class="act-badge" src="assets/icon-btn-ultimate.webp" alt="奥義"><small>'+ultSmall+'</small></button>';
+
+    html += '<button class="act-btn" data-act="coin" '+(p.coinLockNext?'disabled':'')+'>';
+    html += '<span class="act-badge-wrap"><img class="act-badge" src="assets/icon-btn-coin.webp" alt="コイン">';
+    if (p.coinLockNext) html += '<span class="act-status">使用不可</span>';
+    html += '</span></button>';
+
+    html += '<button class="act-btn" data-act="dice" '+(p.diceLockNext?'disabled':'')+'>';
+    html += '<span class="act-badge-wrap"><img class="act-badge act-badge-dice" src="assets/icon-btn-dice.webp" alt="ダイス">';
+    if (p.diceLockNext) html += '<span class="act-status">使用不可</span>';
+    html += '</span></button>';
+
+    var ult = ch.ultimate, ultDisabled, ultStatus, ultActive = false;
+    if (ult.type==='active'){
+      var gateOk = !(ult.kind==='tripleGamble') || (p.hp <= (ult.gateHp||2));
+      ultDisabled = p.ultimateUsed || p.ultLockNext || !gateOk;
+      ultStatus = p.ultimateUsed ? '1回限り' : (p.ultLockNext ? '使用不可' : (!gateOk ? 'HP'+(ult.gateHp||2)+'以下' : '1回限り'));
+    } else if (ult.type==='passive'){
+      ultDisabled = true;
+      ultActive = p.hp <= ult.threshold && p.hp > 0;
+      ultStatus = ultActive ? '発動中' : '未発動';
+    } else {
+      ultDisabled = true;
+      ultStatus = p.ultimateUsed ? '発動済み' : 'スタンバイ';
     }
+    html += '<button class="act-btn" data-act="ultimate" '+(ultDisabled?'disabled':'')+'>';
+    html += '<span class="act-badge-wrap"><img class="act-badge" src="assets/icon-btn-ultimate.webp" alt="奥義">';
+    html += '<span class="act-status'+(ultActive?' active':'')+'">'+ultStatus+'</span>';
+    html += '</span></button>';
+
     html += '</div>';
     bar.innerHTML = html;
     bar.querySelectorAll('[data-act]').forEach(function(b){
