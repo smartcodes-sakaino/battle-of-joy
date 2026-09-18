@@ -172,7 +172,9 @@
   #screen-cointoss::before{content:''; position:absolute; inset:0; background:url('assets/arena-bg.jpg') center 22%/cover no-repeat; z-index:0;}
   #screen-cointoss::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, #0a0b13d8 0%, #0a0b13f0 30%, #0a0b13 85%); z-index:0;}
   #screen-cointoss > *{position:relative; z-index:1;}
-  .coin3d{width:120px; height:120px; perspective:600px;}
+  .coin3d{width:120px; height:120px; perspective:600px; border-radius:50%; transition:box-shadow .3s ease;}
+  .coin3d.result-first{box-shadow:0 0 0 5px var(--p1), 0 0 34px 10px var(--p1-soft);}
+  .coin3d.result-second{box-shadow:0 0 0 5px var(--p2), 0 0 34px 10px var(--p2-soft);}
   .coin3d-inner{width:100%; height:100%; position:relative; transform-style:preserve-3d; border-radius:50%;}
   .coin3d-inner.spinning{animation:coinspin 1.5s cubic-bezier(.2,.6,.3,1) forwards;}
   @keyframes coinspin{0%{transform:rotateY(0);} 100%{transform:rotateY(1800deg);}}
@@ -187,6 +189,8 @@
   .coin-face.back{transform:rotateY(180deg);}
   .toss-result{font-size:18px; font-weight:700;}
   .toss-result .name{color:var(--gold);}
+  .toss-result .name.p1{color:var(--p1);}
+  .toss-result .name.p2{color:var(--p2);}
 
   /* ---------- shared VS card (used in prep + arena) ---------- */
   .vs-stage{
@@ -322,19 +326,19 @@
   .logbar .entry.heal b.num{color:var(--heal);}
 
   .actionbar{
-    flex:2 1 0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:8px;
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+    flex:2 1 0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:6px;
+    padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));
   }
-  .action-buttons{display:flex; gap:16px; justify-content:center; align-items:flex-start;}
+  .action-buttons{display:flex; gap:12px; justify-content:center; align-items:stretch; flex:1; min-height:0;}
   .act-btn{
     appearance:none; border:none; background:transparent; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; gap:4px; padding:2px;
-    flex:0 0 auto; width:88px; transition:transform .12s ease, opacity .15s ease;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:2px;
+    flex:1 1 0; min-width:0; min-height:0; transition:transform .12s ease, opacity .15s ease;
   }
-  .act-btn:active{transform:scale(.92);}
+  .act-btn:active{transform:scale(.95);}
   .act-btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
-  .act-badge{width:100%; max-width:84px; height:auto; object-fit:contain; filter:drop-shadow(0 6px 14px #00000090);}
-  .act-btn small{font-weight:700; font-size:10px; color:var(--text-muted);}
+  .act-badge{max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; filter:drop-shadow(0 6px 14px #00000090);}
+  .act-btn small{font-weight:700; font-size:11px; color:var(--text-muted);}
   .ko-note{text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;}
 
   /* ---------- effect modal ---------- */
@@ -466,7 +470,7 @@
 
   <section id="screen-cointoss" class="menu-screen" hidden>
     <p class="muted">先攻決めのコイントス</p>
-    <div class="coin3d"><div class="coin3d-inner" id="coin3d-inner">
+    <div class="coin3d" id="coin3d-wrap"><div class="coin3d-inner" id="coin3d-inner">
       <div class="coin-face front"><img src="assets/coin-heads.webp" alt="表"></div>
       <div class="coin-face back"><img src="assets/coin-tails.webp" alt="裏"></div>
     </div></div>
@@ -933,7 +937,9 @@
   function runCoinTossSequence(first){
     goto('screen-cointoss');
     var inner = $('coin3d-inner');
+    var wrap = $('coin3d-wrap');
     inner.classList.remove('spinning','toss-heads','toss-tails');
+    wrap.classList.remove('result-first','result-second');
     void inner.offsetWidth;
     var iGoFirst = state.online ? (first === state.myIdx) : null;
     inner.classList.add(state.online ? (iGoFirst ? 'toss-heads' : 'toss-tails') : 'spinning');
@@ -941,9 +947,10 @@
     setTimeout(function(){
       state.current = first;
       if (state.online){
+        wrap.classList.add(iGoFirst ? 'result-first' : 'result-second');
         $('toss-result-text').innerHTML = iGoFirst
-          ? 'あなたは<span class="name p1">先攻</span>です！'
-          : 'あなたは<span class="name p2">後攻</span>です！';
+          ? '⚡ あなたは<span class="name p1">先攻</span>です！'
+          : '🛡 あなたは<span class="name p2">後攻</span>です！';
       } else {
         var lbl = first===0 ? 'P1' : (state.vsNPC ? 'NPC' : 'P2'), cls = first===0 ? 'p1' : 'p2';
         $('toss-result-text').innerHTML = '<span class="name '+cls+'">'+lbl+'</span> が先攻です！';
