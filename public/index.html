@@ -325,10 +325,16 @@
     flex:2 1 0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:8px;
     padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
   }
-  .action-buttons{display:flex; gap:8px;}
-  .action-buttons .btn{flex:1; flex-direction:column; gap:2px; padding:10px 6px 8px; font-size:13.5px;}
-  .action-buttons .btn small{font-weight:500; font-size:10px; color:var(--text-muted);}
-  .act-icon{width:34px; height:34px; object-fit:contain; filter:drop-shadow(0 2px 6px #00000088);}
+  .action-buttons{display:flex; gap:16px; justify-content:center; align-items:flex-start;}
+  .act-btn{
+    appearance:none; border:none; background:transparent; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px; padding:2px;
+    flex:0 0 auto; width:88px; transition:transform .12s ease, opacity .15s ease;
+  }
+  .act-btn:active{transform:scale(.92);}
+  .act-btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .act-badge{width:100%; max-width:84px; height:auto; object-fit:contain; filter:drop-shadow(0 6px 14px #00000090);}
+  .act-btn small{font-weight:700; font-size:10px; color:var(--text-muted);}
   .ko-note{text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;}
 
   /* ---------- effect modal ---------- */
@@ -1201,13 +1207,13 @@
     if (state.online && idx !== state.myIdx){ bar.innerHTML = '<div class="ko-note">相手の行動を待っています<span class="dots"></span></div>'; return; }
 
     var html = '<div class="action-buttons">';
-    html += '<button class="btn" data-act="coin" '+(p.coinLockNext?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-coin.webp" alt="">コイン'+(p.coinLockNext?'<small>使用不可</small>':'')+'</button>';
-    html += '<button class="btn" data-act="dice" '+(p.diceLockNext?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-dice.webp" alt="">ダイス'+(p.diceLockNext?'<small>使用不可</small>':'')+'</button>';
+    html += '<button class="act-btn" data-act="coin" '+(p.coinLockNext?'disabled':'')+'><img class="act-badge" src="assets/icon-btn-coin.webp" alt="コイン">'+(p.coinLockNext?'<small>使用不可</small>':'')+'</button>';
+    html += '<button class="act-btn" data-act="dice" '+(p.diceLockNext?'disabled':'')+'><img class="act-badge" src="assets/icon-btn-dice.webp" alt="ダイス">'+(p.diceLockNext?'<small>使用不可</small>':'')+'</button>';
     if (ch.ultimate.type==='active'){
       var gateOk = !(ch.ultimate.kind==='tripleGamble') || (p.hp <= (ch.ultimate.gateHp||2));
       var ultDisabled = p.ultimateUsed || p.ultLockNext || !gateOk;
       var ultSmall = p.ultimateUsed ? '1回限り' : (p.ultLockNext ? '使用不可' : (!gateOk ? 'HP'+(ch.ultimate.gateHp||2)+'以下で使用可' : '1回限り'));
-      html += '<button class="btn" data-act="ultimate" '+(ultDisabled?'disabled':'')+'><img class="act-icon" src="assets/icon-btn-ultimate.webp" alt="">奥義<small>'+ultSmall+'</small></button>';
+      html += '<button class="act-btn" data-act="ultimate" '+(ultDisabled?'disabled':'')+'><img class="act-badge" src="assets/icon-btn-ultimate.webp" alt="奥義"><small>'+ultSmall+'</small></button>';
     }
     html += '</div>';
     bar.innerHTML = html;
