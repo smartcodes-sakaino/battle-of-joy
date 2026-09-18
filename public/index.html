@@ -991,7 +991,9 @@
     }
 
     var stage = $('prep-stage');
-    stage.innerHTML = buildCardHTML(1,{small:true}) + '<div class="vs-mark">VS</div>' + buildCardHTML(0,{small:true});
+    var prepSelfIdx = state.online ? state.myIdx : 0;
+    var prepOppIdx = prepSelfIdx===0 ? 1 : 0;
+    stage.innerHTML = buildCardHTML(prepOppIdx,{small:true}) + '<div class="vs-mark">VS</div>' + buildCardHTML(prepSelfIdx,{small:true});
     bindCardPress(stage);
 
     clearInterval(state.prepTimerId);
@@ -1132,7 +1134,9 @@
     $('turn-chip').className = 'turn-chip ' + (state.current===0?'p1':'p2');
 
     var stage = $('battle-stage');
-    stage.innerHTML = buildCardHTML(0,{}) + '<div class="vs-mark"></div>' + buildCardHTML(1,{});
+    var battleSelfIdx = state.online ? state.myIdx : 0;
+    var battleOppIdx = battleSelfIdx===0 ? 1 : 0;
+    stage.innerHTML = buildCardHTML(battleSelfIdx,{}) + '<div class="vs-mark"></div>' + buildCardHTML(battleOppIdx,{});
     bindCardPress(stage);
 
     renderActionBar();
@@ -1145,6 +1149,7 @@
   }
   function onNetSync(msg){
     if (Net.role !== 'guest') return;
+    $('resolve-overlay').classList.remove('active');
     state.players = msg.players;
     state.current = msg.current;
     state.matchStats = msg.matchStats;
@@ -1623,14 +1628,15 @@
     setTimeout(function(){ el.remove(); }, 1000);
   }
   function shakeCard(playerIdx){
-    var card = document.querySelectorAll('#battle-stage .vfx-card')[playerIdx];
+    var card = document.querySelector('#battle-stage .vfx-card[data-idx="'+playerIdx+'"]');
     if (!card) return;
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
   }
   function lungeCard(playerIdx){
-    var card = document.querySelectorAll('#battle-stage .vfx-card')[playerIdx];
+    var card = document.querySelector('#battle-stage .vfx-card[data-idx="'+playerIdx+'"]');
     if (!card) return;
-    var dirClass = playerIdx===0 ? 'lunge-right' : 'lunge-left';
+    var selfIdx = state.online ? state.myIdx : 0;
+    var dirClass = playerIdx===selfIdx ? 'lunge-right' : 'lunge-left';
     card.classList.remove('lunge-right','lunge-left'); void card.offsetWidth; card.classList.add(dirClass);
   }
 
